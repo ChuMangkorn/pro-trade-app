@@ -16,10 +16,14 @@ function mapInterval(interval: string): string {
   return mapping[interval] || interval; // Fallback to the original if no mapping found
 }
 
+// Define the structure of a single kline from Binance API
+// [openTime, open, high, low, close, volume, closeTime, quoteAssetVolume, numberOfTrades, takerBuyBaseAssetVolume, takerBuyQuoteAssetVolume, ignore]
+type BinanceKline = [number, string, string, string, string, string, number, string, number, string, string, string];
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol');
-  let interval = searchParams.get('interval');
+  const interval = searchParams.get('interval');
   const limit = searchParams.get('limit') || '500'; // Default to 500 data points
 
   if (!symbol || !interval) {
@@ -40,7 +44,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: `Failed to fetch data from Binance: ${errorData.msg || response.statusText}` }, { status: response.status });
     }
 
-    const data: any[] = await response.json();
+    const data: BinanceKline[] = await response.json();
 
     // Transform data for Lightweight Charts
     // Binance kline data: [openTime, open, high, low, close, volume, closeTime, quoteAssetVolume, numberOfTrades, takerBuyBaseAssetVolume, takerBuyQuoteAssetVolume, ignore]
@@ -54,8 +58,9 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json(formattedData);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching klines:', error);
-    return NextResponse.json({ error: `Internal Server Error: ${error.message}` }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
   }
 } 

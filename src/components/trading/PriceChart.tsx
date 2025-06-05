@@ -5,7 +5,6 @@ import {
   IChartApi,
   ISeriesApi,
   CandlestickData,
-  LineData,
   UTCTimestamp,
   ColorType,
   SeriesType,
@@ -84,7 +83,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     wickDownColor: isDarkTheme ? '#F23645' : '#ef5350',
   }), []);
 
-  const getVolumeSeriesOptions = useCallback((isDarkTheme: boolean): DeepPartial<HistogramSeriesOptions> => ({
+  const getVolumeSeriesOptions = useCallback((): DeepPartial<HistogramSeriesOptions> => ({
     priceFormat: {
       type: 'volume',
     },
@@ -126,7 +125,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     console.log('[ChartFX] Chart object created:', chartRef.current);
 
     // Add volume series with its own price scale
-    const volumeSeries = chart.addHistogramSeries(getVolumeSeriesOptions(isDark));
+    const volumeSeries = chart.addHistogramSeries(getVolumeSeriesOptions());
     volumeSeriesRef.current = volumeSeries;
     
     // Configure the price scale for the volume series to sit at the bottom
@@ -240,10 +239,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
         seriesRef.current = null;
       }
       console.log('[ChartFX Series] Attempting to add new series. Chart object:', chartRef.current);
-      if (chartRef.current) {
-        console.log('[ChartFX Series] Type of addCandlestickSeries:', typeof (chartRef.current as any).addCandlestickSeries);
-        console.log('[ChartFX Series] Type of addLineSeries:', typeof (chartRef.current as any).addLineSeries);
-      }
+
       let newSeries: ISeriesApi<SeriesType> | null = null;
       if (chartType === 'candle') {
         newSeries = chartRef.current.addCandlestickSeries(getCandlestickSeriesOptions(isDark));

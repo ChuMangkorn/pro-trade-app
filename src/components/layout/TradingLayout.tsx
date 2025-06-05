@@ -2,7 +2,6 @@
 import React, { Suspense } from 'react';
 import OrderBook from '@/components/trading/OrderBook';
 import PriceChart from '@/components/trading/PriceChart';
-import TradePanel from '@/components/trading/TradePanel';
 import RecentTrades from '@/components/trading/RecentTrades';
 import TickerList from '@/components/trading/TickerList';
 import TradeTopBar from '@/components/layout/TradeTopBar';

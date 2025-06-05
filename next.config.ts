@@ -1,10 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    turbo: {
-      rules: {
-        // Configure Turbopack rules here
-      },
+  turbopack: {
+    rules: {
+      // Configure Turbopack rules here
     },
   },
   async headers() {

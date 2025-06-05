@@ -85,47 +85,16 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
       ws.onmessage = (event) => {
         try {
           const parsedData = JSON.parse(event.data);
-          // console.log(`[WS:${symbol}] Message received:`, parsedData.stream); // Log stream for brevity
           const { stream, data: message } = parsedData;
 
           if (stream.endsWith('@ticker')) {
-            setData(prev => prev ? {
-              ...prev,
-              price: message.c,
-              priceChangePercent: message.P,
-              volume: message.v,
-              quoteVolume: message.q,
-              highPrice: message.h,
-              lowPrice: message.l
-            } : null);
+            setData(prev => prev ? { ...prev, price: message.c, priceChangePercent: message.P, volume: message.v, quoteVolume: message.q, highPrice: message.h, lowPrice: message.l } : null);
           } else if (stream.endsWith('@depth20@100ms')) {
-            setData(prev => prev ? {
-              ...prev,
-              bids: message.bids || prev.bids,
-              asks: message.asks || prev.asks
-            } : null);
+            setData(prev => prev ? { ...prev, bids: message.bids || prev.bids, asks: message.asks || prev.asks } : null);
           } else if (stream.endsWith('@trade')) {
             setData(prev => {
-              if (!prev) return null;
-
-              // Prevent adding a duplicate trade if the stream sends the same one twice
-              if (prev.trades && prev.trades.find(t => t.t === message.t)) {
-                return prev; // Return previous state, ignoring the duplicate
-              }
-
-              return {
-                ...prev,
-                trades: [
-                  {
-                    t: message.t,
-                    p: message.p,
-                    q: message.q,
-                    T: message.T,
-                    m: message.m
-                  },
-                  ...(prev.trades || []).slice(0, 49)
-                ]
-              };
+              if (!prev || (prev.trades && prev.trades.find(t => t.t === message.t))) return prev;
+              return { ...prev, trades: [{ t: message.t, p: message.p, q: message.q, T: message.T, m: message.m }, ...prev.trades.slice(0, 49)] };
             });
           }
         } catch (err) {
@@ -135,8 +104,6 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
       };
 
       ws.onerror = (event: Event) => {
-        // The 'event' object for onerror is often not very descriptive.
-        // More details usually come from the 'onclose' event that often follows.
         console.error(`[WS:${symbol}] WebSocket error event:`, event);
         setError('WebSocket connection error occurred. See console for details.');
         setIsConnected(false);
@@ -145,9 +112,8 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
       ws.onclose = (event: CloseEvent) => {
         console.log(`[WS:${symbol}] WebSocket closed. Code: ${event.code}, Reason: '${event.reason}', Was Clean: ${event.wasClean}`);
         setIsConnected(false);
-        if (wsRef.current && wsRef.current.readyState === WebSocket.CLOSED && reconnectAttempt < 5) { // Ensure it's actually closed before trying to reconnect
+        if (wsRef.current && wsRef.current.readyState === WebSocket.CLOSED && reconnectAttempt < 5) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempt), 30000);
-          console.log(`[WS:${symbol}] Attempting to reconnect in ${delay / 1000}s (attempt ${reconnectAttempt + 1}/5)`);
           setTimeout(() => {
             setReconnectAttempt(prev => prev + 1);
             connect();
@@ -160,52 +126,36 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
       wsRef.current = ws;
 
       return () => {
-        // This cleanup function is called when the component unmounts or the symbol changes.
-        // We prevent the automatic reconnect logic by nullifying the onclose handler before closing.
         if (wsRef.current) {
-          console.log(`[WS:${symbol}] Intentionally closing WebSocket connection.`);
           wsRef.current.onclose = null;
-          wsRef.current.onerror = null;
-          wsRef.current.onopen = null;
-          wsRef.current.onmessage = null;
           wsRef.current.close();
           wsRef.current = null;
         }
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`[WS:${symbol}] Error in connect/setup phase:`, err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to initialize connection: ${errorMessage}`);
       setIsLoading(false);
-      return () => {};
     }
   }, [symbol, reconnectAttempt]);
 
   useEffect(() => {
-    let cleanupFn: (() => void) | undefined;
-
-    const initializeConnection = async () => {
-      // connect() is async and returns a promise that resolves to the cleanup function
-      const potentialCleanup = await connect();
-      if (typeof potentialCleanup === 'function') {
-        cleanupFn = potentialCleanup;
-      }
+    let cleanup: (() => void) | void;
+    const init = async () => {
+      cleanup = await connect();
     };
-
-    initializeConnection();
+    init();
 
     return () => {
-      if (cleanupFn) {
-        cleanupFn();
+      if (typeof cleanup === 'function') {
+        cleanup();
       }
-      // Also ensure wsRef.current is closed if cleanupFn wasn't set for some reason or if direct cleanup is needed
       if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
-        console.log(`[WS:${symbol}] useEffect cleanup: Forcing WebSocket close.`);
         wsRef.current.close();
-        wsRef.current = null; // Important to nullify after close
       }
     };
-  }, [connect, symbol]); // Added symbol to dependencies for explicit wsRef cleanup logging.
+  }, [connect, symbol]);
 
   return { data, isLoading, error, isConnected };
 };

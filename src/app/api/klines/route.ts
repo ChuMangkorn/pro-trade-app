@@ -17,14 +17,19 @@ function mapInterval(interval: string): string {
 }
 
 // Define the structure of a single kline from Binance API
-// [openTime, open, high, low, close, volume, closeTime, quoteAssetVolume, numberOfTrades, takerBuyBaseAssetVolume, takerBuyQuoteAssetVolume, ignore]
 type BinanceKline = [number, string, string, string, string, string, number, string, number, string, string, string];
+
+// Define a type for Binance API error responses
+interface BinanceError {
+  msg: string;
+  code: number;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol');
   const interval = searchParams.get('interval');
-  const limit = searchParams.get('limit') || '500'; // Default to 500 data points
+  const limit = searchParams.get('limit') || '500';
 
   if (!symbol || !interval) {
     return NextResponse.json({ error: 'Symbol and interval are required' }, { status: 400 });
@@ -33,32 +38,28 @@ export async function GET(request: NextRequest) {
   const mappedInterval = mapInterval(interval);
 
   try {
-    // Construct the Binance API URL
-    // You can adjust the limit as needed. Max is 1000 for klines.
     const binanceUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${mappedInterval}&limit=${limit}`;
     
     const response = await fetch(binanceUrl);
     if (!response.ok) {
-      const errorData: any = await response.json();
+      const errorData: BinanceError = await response.json();
       console.error('Binance API Error:', errorData);
       return NextResponse.json({ error: `Failed to fetch data from Binance: ${errorData.msg || response.statusText}` }, { status: response.status });
     }
 
     const data: BinanceKline[] = await response.json();
 
-    // Transform data for Lightweight Charts
-    // Binance kline data: [openTime, open, high, low, close, volume, closeTime, quoteAssetVolume, numberOfTrades, takerBuyBaseAssetVolume, takerBuyQuoteAssetVolume, ignore]
     const formattedData = data.map(kline => ({
-      time: kline[0] / 1000, // Convert milliseconds to seconds (UTC timestamp)
+      time: kline[0] / 1000,
       open: parseFloat(kline[1]),
       high: parseFloat(kline[2]),
       low: parseFloat(kline[3]),
       close: parseFloat(kline[4]),
-      volume: parseFloat(kline[5]), // Volume can be added if needed for volume series
+      volume: parseFloat(kline[5]),
     }));
 
     return NextResponse.json(formattedData);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching klines:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });

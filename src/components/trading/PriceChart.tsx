@@ -198,11 +198,11 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     setIsLoading(true); setChartError(null); setHistoricalData([]);
     fetch(`/api/klines?symbol=${symbol}&interval=${timeframe}&limit=500`)
       .then(res => {
-        if (!res.ok) throw res.json().then(err => new Error(err.error || `API Error: ${res.statusText}`));
+        if (!res.ok) throw res.json().then((err: any) => new Error(err.error || `API Error: ${res.statusText}`));
         return res.json();
       })
       .then((data: KlineData[]) => setHistoricalData(data.sort((a, b) => a.time - b.time)))
-      .catch(err => {
+      .catch((err: any) => {
         console.error('[ChartFX] Error fetching historical data:', err);
         setChartError(err.message);
       })

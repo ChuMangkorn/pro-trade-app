@@ -172,7 +172,7 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
           wsRef.current = null;
         }
       };
-    } catch (err) {
+    } catch (err: any) {
       console.error(`[WS:${symbol}] Error in connect/setup phase:`, err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to initialize connection: ${errorMessage}`);

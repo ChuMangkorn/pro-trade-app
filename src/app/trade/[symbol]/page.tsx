@@ -1,7 +1,13 @@
 import React from 'react';
 import TradingLayout from '@/components/layout/TradingLayout';
 
-export default function TradeSymbolPage({ params }: { params: { symbol: string } }) {
-  // params.symbol จะเป็น BTCUSDT, ETHUSDT ฯลฯ
+interface PageProps {
+  params: {
+    symbol: string;
+  };
+}
+
+export default function TradeSymbolPage({ params }: PageProps) {
+  // params.symbol will be BTCUSDT, ETHUSDT, etc.
   return <TradingLayout symbol={params.symbol} />;
 }

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     
     const response = await fetch(binanceUrl);
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData: any = await response.json();
       console.error('Binance API Error:', errorData);
       return NextResponse.json({ error: `Failed to fetch data from Binance: ${errorData.msg || response.statusText}` }, { status: response.status });
     }
@@ -58,9 +58,9 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json(formattedData);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching klines:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
   }
-} 
+}

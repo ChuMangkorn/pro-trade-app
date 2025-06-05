@@ -1,82 +1,88 @@
 'use client';
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTickerStream, MiniTicker } from '@/hooks/useTickerStream';
 import SkeletonLoader from '@/components/common/SkeletonLoader';
 
-interface TickerListProps {
-  activeSymbol: string;
-}
-
-const popularPairs = [
-  'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'DOGEUSDT', 
-  'XRPUSDT', 'DOTUSDT', 'UNIUSDT', 'LTCUSDT', 'LINKUSDT'
-];
-
-// A memoized component for rendering a single ticker item.
-// This prevents re-rendering all items when only one ticker's data changes.
 const TickerItem: React.FC<{
   pair: string;
   ticker: MiniTicker | undefined;
   isSelected: boolean;
   onSelect: (pair: string) => void;
 }> = React.memo(({ pair, ticker, isSelected, onSelect }) => {
-  let priceChangePercent = 0;
-  if (ticker) {
+  const priceChangePercent = useMemo(() => {
+    if (!ticker) return 0;
     const openPrice = parseFloat(ticker.o);
     const closePrice = parseFloat(ticker.c);
-    if (openPrice > 0) {
-      priceChangePercent = ((closePrice - openPrice) / openPrice) * 100;
-    }
-  }
+    return openPrice > 0 ? ((closePrice - openPrice) / openPrice) * 100 : 0;
+  }, [ticker]);
+
   const isPositive = priceChangePercent >= 0;
 
   return (
     <button
       onClick={() => onSelect(pair)}
-      className={`w-full p-2 rounded text-left transition-colors ${
-        isSelected ? 'bg-blue-500/10 dark:bg-blue-500/20' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'
+      className={`grid grid-cols-3 w-full p-2 text-xs transition-colors ${
+        isSelected ? 'bg-white/10' : 'hover:bg-[var(--color-binance-hover)]'
       }`}
     >
-      <div className="flex justify-between items-center">
-        <span className={`font-medium text-sm ${isSelected ? 'text-blue-600 dark:text-blue-400' : ''}`}>
-          {pair.replace('USDT', '/USDT')}
-        </span>
-        <div className="text-right">
-          {ticker ? (
-            <>
-              <div className="font-mono text-sm">{parseFloat(ticker.c).toFixed(2)}</div>
-              <div className={`font-mono text-xs ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                {isPositive ? '+' : ''}{priceChangePercent.toFixed(2)}%
-              </div>
-            </>
-          ) : (
-            <SkeletonLoader className="w-16 h-8" />
-          )}
-        </div>
+      <div className="text-left font-medium text-foreground">
+        {pair.replace('USDT', '')}
+        <span className="text-muted-foreground">/USDT</span>
+      </div>
+      <div className={`text-right font-mono ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+        {ticker ? parseFloat(ticker.c).toFixed(2) : <SkeletonLoader className="w-10 h-3 inline-block"/>}
+      </div>
+      <div className={`text-right font-mono ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+        {ticker ? `${isPositive ? '+' : ''}${priceChangePercent.toFixed(2)}%` : <SkeletonLoader className="w-10 h-3 inline-block"/>}
       </div>
     </button>
   );
 });
 TickerItem.displayName = 'TickerItem';
 
-const TickerList: React.FC<TickerListProps> = ({ activeSymbol }) => {
+const TickerList: React.FC<{ activeSymbol: string }> = ({ activeSymbol }) => {
   const router = useRouter();
-  const { tickers, isConnected } = useTickerStream(popularPairs);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const popularPairs = [
+    'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'DOGEUSDT', 
+    'XRPUSDT', 'DOTUSDT', 'UNIUSDT', 'LTCUSDT', 'LINKUSDT',
+    'SOLUSDT', 'MATICUSDT', 'AVAXUSDT', 'SHIBUSDT', 'TRXUSDT'
+  ];
+  
+  const { tickers } = useTickerStream(popularPairs);
 
   const handlePairSelect = (pair: string) => {
     if (pair !== activeSymbol) {
       router.push(`/trade/${pair}`);
     }
   };
+  
+  const filteredPairs = popularPairs.filter(p => 
+    p.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="h-full flex flex-col bg-background text-foreground p-2">
-      <div className="px-2 py-2">
-        <h2 className="font-bold text-lg">Markets</h2>
+    <div className="h-full flex flex-col text-foreground">
+      <div className="p-2">
+        <input
+          type="text"
+          placeholder="Search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-1.5 text-xs bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-yellow-500"
+        />
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-        {popularPairs.map((pair) => (
+      
+      <div className="grid grid-cols-3 px-2 pb-1 text-xs text-muted-foreground">
+        <div className="text-left">Pair</div>
+        <div className="text-right">Price</div>
+        <div className="text-right">Change</div>
+      </div>
+      
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+        {filteredPairs.map((pair) => (
           <TickerItem
             key={pair}
             pair={pair}
@@ -85,14 +91,14 @@ const TickerList: React.FC<TickerListProps> = ({ activeSymbol }) => {
             onSelect={handlePairSelect}
           />
         ))}
+        {filteredPairs.length === 0 && (
+          <div className="text-center text-sm text-muted-foreground py-4">
+            No markets found.
+          </div>
+        )}
       </div>
-       {!isConnected && (
-        <div className="p-2 text-center text-xs text-yellow-500">
-          Connecting stream...
-        </div>
-      )}
     </div>
   );
 };
 
-export default TickerList; 
+export default TickerList;

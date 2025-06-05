@@ -1,5 +1,22 @@
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+// --- Interfaces for our data structures ---
+interface KlineData {
+  t: number; // Kline start time (ms)
+  o: string; // Open price
+  h: string; // High price
+  l: string; // Low price
+  c: string; // Close price
+}
+
+interface TradeData {
+    t: number; // trade ID
+    p: string; // price
+    q: string; // quantity
+    T: number; // timestamp
+    m: boolean; // is buyer maker
+}
 
 interface BinanceWebSocketData {
   price: string;
@@ -10,13 +27,8 @@ interface BinanceWebSocketData {
   lowPrice: string;
   bids: [string, string][];
   asks: [string, string][];
-  trades: Array<{
-    t: number;  // trade ID
-    p: string;  // price
-    q: string;  // quantity
-    T: number;  // timestamp
-    m: boolean; // is buyer maker
-  }>;
+  trades: TradeData[];
+  kline?: KlineData;
 }
 
 interface UseBinanceWebSocketReturn {
@@ -26,136 +38,116 @@ interface UseBinanceWebSocketReturn {
   isConnected: boolean;
 }
 
-const fetchInitialData = async (symbol: string): Promise<Partial<BinanceWebSocketData>> => {
-  try {
-    const [tickerRes, depthRes] = await Promise.all([
-      fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`),
-      fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=20`)
-    ]);
-
-    const [tickerData, depthData] = await Promise.all([
-      tickerRes.json(),
-      depthRes.json()
-    ]);
-
-    return {
-      price: tickerData.lastPrice,
-      priceChangePercent: tickerData.priceChangePercent,
-      volume: tickerData.volume,
-      quoteVolume: tickerData.quoteVolume,
-      highPrice: tickerData.highPrice,
-      lowPrice: tickerData.lowPrice,
-      bids: depthData.bids,
-      asks: depthData.asks,
-      trades: []
-    };
-  } catch (error) {
-    console.error('Error fetching initial data:', error);
-    throw error;
-  }
-};
-
+// --- The Hook ---
 export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn => {
   const [data, setData] = useState<BinanceWebSocketData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
 
-  const connect = useCallback(async () => {
-    if (typeof window === 'undefined') return;
+  useEffect(() => {
+    let isMounted = true;
+    
+    const connect = async () => {
+      setIsLoading(true);
+      setData(null);
+      setError(null);
 
-    try {
-      // Fetch initial data
-      const initialData = await fetchInitialData(symbol);
-      setData(initialData as BinanceWebSocketData);
-      setIsLoading(false);
+      try {
+        const tickerRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
+        if (!tickerRes.ok) throw new Error('Failed to fetch initial ticker data');
+        const tickerData = await tickerRes.json();
+        
+        if (isMounted) {
+          setData({
+            price: tickerData.lastPrice,
+            priceChangePercent: tickerData.priceChangePercent,
+            volume: tickerData.volume,
+            quoteVolume: tickerData.quoteVolume,
+            highPrice: tickerData.highPrice,
+            lowPrice: tickerData.lowPrice,
+            bids: [],
+            asks: [],
+            trades: [],
+          });
+        }
+      } catch (e) {
+        if (isMounted) setError(e instanceof Error ? e.message : 'Failed to fetch initial data');
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+      
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
 
       const lowerSymbol = symbol.toLowerCase();
-      const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${lowerSymbol}@ticker/${lowerSymbol}@depth20@100ms/${lowerSymbol}@trade`);
+      const streams = [
+        `${lowerSymbol}@ticker`,
+        `${lowerSymbol}@depth20@100ms`,
+        `${lowerSymbol}@trade`,
+        `${lowerSymbol}@kline_1m`
+      ].join('/');
+
+      // **** THIS IS THE CORRECTED LINE ****
+      const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+      wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log(`[WS:${symbol}] WebSocket connected`);
-        setIsConnected(true);
-        setError(null);
-        setReconnectAttempt(0);
+        if (isMounted) {
+            console.log(`[WS:${symbol}] WebSocket connected.`);
+            setIsConnected(true);
+        }
       };
 
       ws.onmessage = (event) => {
-        try {
-          const parsedData = JSON.parse(event.data);
-          const { stream, data: message } = parsedData;
+        if (!isMounted) return;
 
-          if (stream.endsWith('@ticker')) {
-            setData(prev => prev ? { ...prev, price: message.c, priceChangePercent: message.P, volume: message.v, quoteVolume: message.q, highPrice: message.h, lowPrice: message.l } : null);
-          } else if (stream.endsWith('@depth20@100ms')) {
-            setData(prev => prev ? { ...prev, bids: message.bids || prev.bids, asks: message.asks || prev.asks } : null);
-          } else if (stream.endsWith('@trade')) {
-            setData(prev => {
-              if (!prev || (prev.trades && prev.trades.find(t => t.t === message.t))) return prev;
-              return { ...prev, trades: [{ t: message.t, p: message.p, q: message.q, T: message.T, m: message.m }, ...prev.trades.slice(0, 49)] };
-            });
-          }
-        } catch (err) {
-          console.error(`[WS:${symbol}] Error parsing message:`, err, 'Raw data:', event.data);
-          setError('Failed to parse WebSocket message');
+        const message = JSON.parse(event.data);
+        
+        // Add a check to ensure message.stream exists
+        if (message && message.stream) {
+            const stream = message.stream;
+            const streamData = message.data;
+
+            if (stream.endsWith('@ticker')) {
+            setData(prev => prev ? { ...prev, price: streamData.c, priceChangePercent: streamData.P } : null);
+            } else if (stream.endsWith('@depth20@100ms')) {
+            setData(prev => prev ? { ...prev, bids: streamData.bids, asks: streamData.asks } : null);
+            } else if (stream.endsWith('@trade')) {
+            setData(prev => prev ? { ...prev, trades: [streamData, ...prev.trades].slice(0, 50) } : null);
+            } else if (stream.endsWith('@kline_1m')) {
+            setData(prev => prev ? { ...prev, kline: { t: streamData.k.t / 1000, o: streamData.k.o, h: streamData.k.h, l: streamData.k.l, c: streamData.k.c } } : null);
+            }
         }
       };
 
-      ws.onerror = (event: Event) => {
-        console.error(`[WS:${symbol}] WebSocket error event:`, event);
-        setError('WebSocket connection error occurred. See console for details.');
-        setIsConnected(false);
-      };
-
-      ws.onclose = (event: CloseEvent) => {
-        console.log(`[WS:${symbol}] WebSocket closed. Code: ${event.code}, Reason: '${event.reason}', Was Clean: ${event.wasClean}`);
-        setIsConnected(false);
-        if (wsRef.current && wsRef.current.readyState === WebSocket.CLOSED && reconnectAttempt < 5) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempt), 30000);
-          setTimeout(() => {
-            setReconnectAttempt(prev => prev + 1);
-            connect();
-          }, delay);
-        } else {
-          setError('Failed to reconnect after multiple attempts');
+      ws.onerror = (event) => {
+        if (isMounted) {
+            console.error('[WS] WebSocket error:', event);
+            setError('WebSocket connection error');
+            setIsConnected(false);
         }
       };
 
-      wsRef.current = ws;
-
-      return () => {
-        if (wsRef.current) {
-          wsRef.current.onclose = null;
-          wsRef.current.close();
-          wsRef.current = null;
+      ws.onclose = () => {
+        if (isMounted) {
+            console.log('[WS] WebSocket closed.');
+            setIsConnected(false);
         }
       };
-    } catch (err: unknown) {
-      console.error(`[WS:${symbol}] Error in connect/setup phase:`, err);
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(`Failed to initialize connection: ${errorMessage}`);
-      setIsLoading(false);
-    }
-  }, [symbol, reconnectAttempt]);
-
-  useEffect(() => {
-    let cleanup: (() => void) | void;
-    const init = async () => {
-      cleanup = await connect();
     };
-    init();
+
+    connect();
 
     return () => {
-      if (typeof cleanup === 'function') {
-        cleanup();
-      }
-      if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
+      isMounted = false;
+      if (wsRef.current) {
         wsRef.current.close();
       }
     };
-  }, [connect, symbol]);
+  }, [symbol]);
 
   return { data, isLoading, error, isConnected };
 };

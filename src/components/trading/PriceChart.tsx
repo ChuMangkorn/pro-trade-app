@@ -13,7 +13,6 @@ import {
   SeriesOptionsCommon,
   CandlestickSeriesOptions,
   ChartOptions,
-  SeriesOptionsMap,
   HistogramData,
   HistogramSeriesOptions,
 } from 'lightweight-charts';

@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+@theme {
+  /* Base Colors */
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+  --color-border: #e5e5e5;
+  
+  /* Trading Colors */
+  --color-green-500: #16a34a;
+  --color-green-600: #15803d;
+  --color-red-500: #dc2626;
+  --color-red-600: #dc2626;
+  --color-yellow-500: #eab308;
+  
+  /* Binance Brand */
+  --color-binance-yellow: #f0b90b;
+  
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), 'Courier New', monospace;
+}
+
+/* Dark Mode Variables */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer theme {
+  .dark {
+    --color-background: #0a0a0a;
+    --color-foreground: #ededed;
+    --color-muted: #262626;
+    --color-muted-foreground: #a3a3a3;
+    --color-border: #404040;
+  }
+}
+
+/* Global Styles */
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+/* Trading Specific Styles */
+.order-book-bid {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.order-book-ask {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.price-up {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.price-down {
+  @apply text-red-600 dark:text-red-400;
+}
+
+/* Volume Bars */
+.volume-bar-bid {
+  background: linear-gradient(90deg, rgba(22, 163, 74, 0.1) 0%, rgba(22, 163, 74, 0.3) 100%);
+}
+
+.volume-bar-ask {
+  background: linear-gradient(90deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.3) 100%);
+}
+
+/* Scrollbar Styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-muted);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-muted-foreground);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-foreground);
+}
+
+/* Flash Animations */
+@keyframes flash-up {
+  from { background-color: rgba(22, 163, 74, 0.4); }
+  to { background-color: transparent; }
+}
+
+@keyframes flash-down {
+  from { background-color: rgba(220, 38, 38, 0.4); }
+  to { background-color: transparent; }
+}
+
+.flash-up {
+  animation: flash-up 0.5s ease-out;
+}
+
+.flash-down {
+  animation: flash-down 0.5s ease-out;
+}

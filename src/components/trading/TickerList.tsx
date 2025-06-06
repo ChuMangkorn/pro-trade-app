@@ -6,7 +6,24 @@ import SkeletonLoader from '@/components/common/SkeletonLoader';
 import { FixedSizeList as List } from 'react-window';
 
 // --- Helper Components ---
-const FavoriteStar: React.FC<{ isFavorite: boolean; onClick: (e: React.MouseEvent) => void; }> = ({ isFavorite, onClick }) => (<button onClick={onClick} className="w-5 h-5 flex items-center justify-center text-yellow-500 hover:opacity-80 transition-opacity"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>);
+const FavoriteStar: React.FC<{ isFavorite: boolean; onClick: (e: React.MouseEvent) => void; }> = ({ isFavorite, onClick }) => (
+  <button
+    onClick={onClick}
+    className="w-5 h-5 flex items-center justify-center text-[var(--color-binance-yellow)] hover:opacity-80 transition-opacity"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill={isFavorite ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  </button>
+);
 
 interface TickerItemProps {
   pair: string;
@@ -49,7 +66,42 @@ const TickerItem: React.FC<TickerItemProps> = React.memo(({ pair, ticker, isSele
 });
 TickerItem.displayName = 'TickerItem';
 
-const QuoteAssetTab: React.FC<{ asset: string | React.ReactNode; isActive: boolean; onClick: () => void; }> = ({ asset, isActive, onClick }) => (<button onClick={onClick} className={`px-3 py-2 text-xs font-medium transition-colors outline-none ${isActive ? 'border-b-2 border-yellow-500 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>{asset}</button>);
+const QuoteAssetTab: React.FC<{
+  asset: string | React.ReactNode;
+  isActive: boolean;
+  onClick: () => void;
+}> = ({ asset, isActive, onClick }) => {
+  const isStar = asset === '⭐️';
+  const label = isStar ? (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="w-4 h-4"
+      fill={isActive ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  ) : (
+    asset
+  );
+
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-2 text-xs font-medium transition-colors outline-none ${
+        isActive
+          ? 'border-b-2 border-[var(--color-binance-yellow)] text-[var(--color-binance-yellow)]'
+          : 'text-muted-foreground hover:text-foreground'
+      }`}
+    >
+      {label}
+    </button>
+  );
+};
 
 const TickerList: React.FC<{ activeSymbol: string }> = ({ activeSymbol }) => {
   const router = useRouter();
@@ -122,7 +174,14 @@ const TickerList: React.FC<{ activeSymbol: string }> = ({ activeSymbol }) => {
         {quoteAssets.map(asset => (<QuoteAssetTab key={asset.toString()} asset={asset} isActive={activeTab === asset} onClick={() => setActiveTab(asset.toString())} />))}
       </div>
       <div className="p-2">
-        <input ref={searchInputRef} type="text" placeholder={`Search in ${activeTab}...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-1.5 text-xs bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-yellow-500" />
+        <input
+          ref={searchInputRef}
+          type="text"
+          placeholder={`Search in ${activeTab}...`}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-1.5 text-xs bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--color-binance-yellow)]"
+        />
       </div>
       <div className="grid grid-cols-[30px_1fr_1fr_1fr_1fr] gap-3 px-2 pb-1 text-xs text-muted-foreground">
         <div></div>

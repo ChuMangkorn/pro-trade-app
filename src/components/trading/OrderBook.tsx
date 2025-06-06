@@ -32,7 +32,6 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 📍 FIX: Define baseCurrency and quoteCurrency from the symbol prop
   const baseCurrency = useMemo(() => symbol.replace(/USDT|BTC|ETH|BNB$/, ''), [symbol]);
   const quoteCurrency = useMemo(() => symbol.match(/USDT|BTC|ETH|BNB$/)?.[0] || '', [symbol]);
 
@@ -66,7 +65,10 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
     const aggregatedAsksMap = aggregateOrders(data.asks);
     const aggregatedBidsMap = aggregateOrders(data.bids);
     const formattedBids = formatOrders(aggregatedBidsMap, true);
-    const formattedAsks = formatOrders(aggregatedAsksMap, false).reverse();
+    // Binance shows asks from highest price at the top down to the best ask near
+    // the center. We keep the list in ascending order and rely on flex-col-reverse
+    // when rendering to achieve this visual ordering.
+    const formattedAsks = formatOrders(aggregatedAsksMap, false);
     const maxAskTotal = formattedAsks[0]?.total || 0;
     const maxBidTotal = formattedBids[formattedBids.length - 1]?.total || 0;
 
@@ -137,11 +139,30 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   const renderOrderRow = (order: Order, isAsk: boolean) => {
     const depthPercentage = maxTotal > 0 ? (order.total / maxTotal) * 100 : 0;
     return (
-      <div key={order.price} className="relative grid grid-cols-3 gap-4 py-[2px] px-2 text-xs hover:bg-[var(--color-binance-hover)] cursor-pointer">
-        <div className="absolute inset-y-0 right-0" style={{ width: `${depthPercentage}%`, backgroundColor: isAsk ? 'var(--color-binance-sell-transparent)' : 'var(--color-binance-buy-transparent)' }} />
-        <div className={`relative z-10 font-mono ${isAsk ? 'text-red-500' : 'text-green-500'}`}>{order.price.toFixed(precision.toString().split('.')[1]?.length || 0)}</div>
-        <div className="relative z-10 text-right font-mono">{order.quantity.toFixed(4)}</div>
-        <div className="relative z-10 text-right font-mono text-muted-foreground">{order.total.toFixed(2)}</div>
+      <div
+        key={order.price}
+        className="relative grid grid-cols-3 gap-4 py-[2px] px-2 text-xs hover:bg-[var(--color-binance-hover)] cursor-pointer"
+      >
+        <div
+          className={`absolute inset-y-0 ${isAsk ? 'right-0' : 'left-0'}`}
+          style={{
+            width: `${depthPercentage}%`,
+            backgroundColor: isAsk
+              ? 'var(--color-binance-sell-transparent)'
+              : 'var(--color-binance-buy-transparent)',
+          }}
+        />
+        <div
+          className={`relative z-10 font-mono ${isAsk ? 'text-red-500' : 'text-green-500'}`}
+        >
+          {order.price.toFixed(precision.toString().split('.')[1]?.length || 0)}
+        </div>
+        <div className="relative z-10 text-right font-mono">
+          {order.quantity.toFixed(4)}
+        </div>
+        <div className="relative z-10 text-right font-mono text-muted-foreground">
+          {order.total.toFixed(2)}
+        </div>
       </div>
     );
   };

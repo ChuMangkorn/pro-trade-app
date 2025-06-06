@@ -51,6 +51,7 @@ const TradingLayout: React.FC<TradingLayoutProps> = ({ symbol }) => {
     <OrderProvider>
       <BinanceWebSocketProvider symbol={symbol}>
         {/* Render the component that updates the document title */}
+        {/* 4. Render the component created above */}
         <DynamicTitleUpdater symbol={symbol} />
         <div className="h-screen flex flex-col bg-background dark text-foreground">
           <TradeTopBar symbol={symbol} />

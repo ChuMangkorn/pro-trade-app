@@ -27,7 +27,6 @@ const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, onClose, 
           <button onClick={onClose} className="text-2xl text-muted-foreground hover:text-foreground transition-colors">&times;</button>
         </div>
 
-        {/* 📍 FIX: Add padding to the content area */}
         <div className="flex-1 min-h-0 p-2">
           <TickerList activeSymbol={activeSymbol} />
         </div>

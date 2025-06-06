@@ -84,7 +84,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ symbol = 'BTCUSDT' }) =
       </div>
 
       {!isConnected && (
-        <div className="text-yellow-500 text-sm">
+        <div className="text-[var(--color-binance-yellow)] text-sm">
           Reconnecting...
         </div>
       )}

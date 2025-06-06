@@ -17,7 +17,7 @@ export interface TradeData { // Exporting for PriceChart
   t: number; // Trade ID
   p: string; // Price
   q: string; // Quantity
-  m: boolean; // Is the buyer the Bmaker?
+  m: boolean; // Is the buyer the maker?
   // Other fields like 'b' (buyer order ID), 'a' (seller order ID) exist but might not be needed for chart
 }
 

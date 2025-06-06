@@ -1,12 +1,12 @@
 'use client';
-import React, { Suspense, useEffect } from 'react'; // 1. Import useEffect
+import React, { Suspense, useEffect } from 'react'; // useEffect is required for dynamic title updates
 import OrderBook from '@/components/trading/OrderBook';
 import PriceChart from '@/components/trading/PriceChart';
 import RecentTrades from '@/components/trading/RecentTrades';
 import TickerList from '@/components/trading/TickerList';
 import TradeTopBar from '@/components/layout/TradeTopBar';
 import SkeletonLoader from '@/components/common/SkeletonLoader';
-import { BinanceWebSocketProvider, useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext'; // 2. Import useSharedBinanceWebSocket
+import { BinanceWebSocketProvider, useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext'; // Provides shared WebSocket data
 import { OrderProvider } from '@/context/OrderContext';
 import ActivityPanel from '@/components/trading/ActivityPanel';
 
@@ -22,7 +22,7 @@ const LoadingFallback = () => (
   </div>
 );
 
-// 3. สร้าง Inner Component เพื่อให้สามารถใช้ Hook ได้ภายใน Provider
+// Inner component that updates the title using data from the WebSocket
 const DynamicTitleUpdater: React.FC<{ symbol: string }> = ({ symbol }) => {
   const { data } = useSharedBinanceWebSocket();
   const originalTitle = 'ProTrade | Real-Time Crypto Trading';
@@ -50,7 +50,7 @@ const TradingLayout: React.FC<TradingLayoutProps> = ({ symbol }) => {
   return (
     <OrderProvider>
       <BinanceWebSocketProvider symbol={symbol}>
-        {/* 4. เรียกใช้ Component ที่สร้างขึ้น */}
+        {/* Render the component that updates the document title */}
         <DynamicTitleUpdater symbol={symbol} />
         <div className="h-screen flex flex-col bg-background dark text-foreground">
           <TradeTopBar symbol={symbol} />

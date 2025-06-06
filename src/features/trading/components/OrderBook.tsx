@@ -1,8 +1,8 @@
 'use client';
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
-import Flashable from '@/components/common/Flashable';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import Flashable from '@/components/ui/Flashable';
 
 interface OrderBookProps {
   symbol: string;

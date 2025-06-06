@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import TickerList from '@/components/trading/TickerList';
+import TickerList from '@/features/trading/components/TickerList';
 
 interface SymbolSearchModalProps {
   isOpen: boolean;

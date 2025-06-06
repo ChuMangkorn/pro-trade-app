@@ -1,14 +1,14 @@
 'use client';
 import React, { Suspense, useEffect } from 'react'; // useEffect is required for dynamic title updates
-import OrderBook from '@/components/trading/OrderBook';
-import PriceChart from '@/components/trading/PriceChart';
-import RecentTrades from '@/components/trading/RecentTrades';
-import TickerList from '@/components/trading/TickerList';
+import OrderBook from '@/features/trading/components/OrderBook';
+import PriceChart from '@/features/trading/components/PriceChart';
+import RecentTrades from '@/features/trading/components/RecentTrades';
+import TickerList from '@/features/trading/components/TickerList';
 import TradeTopBar from '@/components/layout/TradeTopBar';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { BinanceWebSocketProvider, useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext'; // Provides shared WebSocket data
 import { OrderProvider } from '@/context/OrderContext';
-import ActivityPanel from '@/components/trading/ActivityPanel';
+import ActivityPanel from '@/features/trading/components/ActivityPanel';
 
 interface TradingLayoutProps {
   symbol: string;

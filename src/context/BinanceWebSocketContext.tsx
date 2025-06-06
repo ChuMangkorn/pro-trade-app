@@ -1,5 +1,6 @@
 'use client';
 import React, { createContext, useContext, ReactNode } from 'react';
+import { debounce } from 'lodash';
 import { useBinanceWebSocket } from '@/hooks/useBinanceWebSocket';
 
 // Define the shape of the data provided by the context

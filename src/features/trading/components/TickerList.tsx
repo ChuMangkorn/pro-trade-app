@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTickerStream, MiniTicker } from '@/hooks/useTickerStream';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { FixedSizeList as List } from 'react-window';
 
 // --- Helper Components ---

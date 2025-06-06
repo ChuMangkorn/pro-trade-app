@@ -13,6 +13,7 @@
     "@tailwindcss/cli": "^4.1.8",
     "@types/react-window": "^1.8.8",
     "lightweight-charts": "^4.2.3",
+    "lodash": "^4.17.21",
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

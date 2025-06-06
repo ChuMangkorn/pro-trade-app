@@ -9,9 +9,13 @@ import {
   Time, PriceLineOptions, IPriceLine, LineStyle,
 } from 'lightweight-charts';
 import { useIsDarkMode } from '@/hooks/useIsDarkMode';
+import {
+  calculateSMA,
+  getTimeframeMilliseconds,
+  ChartKlineData,
+} from '@/utils/chart';
 
 // --- Interfaces, Helpers, and Components ---
-interface ChartKlineData { time: UTCTimestamp; open: number; high: number; low: number; close: number; volume: number; }
 interface ChartControlButtonProps { isActive: boolean; onClick: () => void; children: React.ReactNode; }
 
 const ChartControlButton: React.FC<ChartControlButtonProps> = ({ isActive, onClick, children }) => (
@@ -20,34 +24,7 @@ const ChartControlButton: React.FC<ChartControlButtonProps> = ({ isActive, onCli
   </button>
 );
 
-const getTimeframeMilliseconds = (tf: string): number | null => {
-  const value = parseInt(tf.replace(/[a-zA-Z]/g, ''));
-  if (isNaN(value)) {
-    if (tf.toUpperCase() === '1D') return 86400000;
-    if (tf.toUpperCase() === '1W') return 604800000;
-    return null;
-  }
-  const unit = tf.slice(-1).toUpperCase();
-  switch (unit) {
-    case 'M': return value * 60 * 1000;
-    case 'H': return value * 3600 * 1000;
-    default: return null;
-  }
-};
 
-// 📍 1. ฟังก์ชันสำหรับคำนวณ SMA
-const calculateSMA = (data: ChartKlineData[], period: number): { time: UTCTimestamp; value: number }[] => {
-  if (!data || data.length < period) return [];
-  let smaData: { time: UTCTimestamp; value: number }[] = [];
-  for (let i = period - 1; i < data.length; i++) {
-    let sum = 0;
-    for (let j = 0; j < period; j++) {
-      sum += data[i - j].close;
-    }
-    smaData.push({ time: data[i].time, value: sum / period });
-  }
-  return smaData;
-};
 
 
 const PriceChart: React.FC<{ symbol: string }> = ({ symbol }) => {

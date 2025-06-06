@@ -19,12 +19,32 @@ import {
 interface ChartControlButtonProps { isActive: boolean; onClick: () => void; children: React.ReactNode; }
 
 const ChartControlButton: React.FC<ChartControlButtonProps> = ({ isActive, onClick, children }) => (
-  <button onClick={onClick} className={`px-2 py-1 text-xs rounded-sm transition-colors ${isActive ? 'bg-white/10 text-foreground' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
+  <button
+    onClick={onClick}
+    className={`px-2 py-1 text-xs rounded-sm transition-colors ${
+      isActive
+        ? 'border-b-2 border-[var(--color-binance-yellow)] text-[var(--color-binance-yellow)]'
+        : 'text-muted-foreground hover:text-foreground'
+    }`}
+  >
     {children}
   </button>
 );
 
 
+// Calculate Simple Moving Average (SMA)
+const calculateSMA = (data: ChartKlineData[], period: number): { time: UTCTimestamp; value: number }[] => {
+  if (!data || data.length < period) return [];
+  let smaData: { time: UTCTimestamp; value: number }[] = [];
+  for (let i = period - 1; i < data.length; i++) {
+    let sum = 0;
+    for (let j = 0; j < period; j++) {
+      sum += data[i - j].close;
+    }
+    smaData.push({ time: data[i].time, value: sum / period });
+  }
+  return smaData;
+};
 
 
 const PriceChart: React.FC<{ symbol: string }> = ({ symbol }) => {
@@ -34,7 +54,7 @@ const PriceChart: React.FC<{ symbol: string }> = ({ symbol }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [chartError, setChartError] = useState<string | null>(null);
 
-  // 📍 2. เพิ่ม State และ Ref สำหรับ SMA
+  // State and ref for SMA
   const [smaPeriod, setSmaPeriod] = useState(20);
   const [smaData, setSmaData] = useState<{ time: UTCTimestamp; value: number }[]>([]);
   const smaSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
@@ -50,7 +70,36 @@ const PriceChart: React.FC<{ symbol: string }> = ({ symbol }) => {
   const { data: wsData } = useSharedBinanceWebSocket();
 
   const timeframes = [{ label: '1m', value: '1m' }, { label: '15m', value: '15m' }, { label: '1H', value: '1h' }, { label: '4H', value: '4h' }, { label: '1D', value: '1d' }, { label: '1W', value: '1w' }];
-  const chartOptions = useCallback((isDarkTheme: boolean): DeepPartial<ChartOptions> => ({ layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: isDarkTheme ? '#D1D4DC' : '#333333' }, grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } }, rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' }, timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', timeVisible: true }, crosshair: { mode: 1 }, handleScroll: true, handleScale: true }), []);
+  const chartOptions = useCallback(
+    (isDarkTheme: boolean): DeepPartial<ChartOptions> => ({
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: isDarkTheme ? '#D1D4DC' : '#333333',
+      },
+      grid: {
+        vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
+        horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
+      },
+      rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
+      timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', timeVisible: true },
+      crosshair: {
+        mode: 1,
+        vertLine: {
+          color: '#848E9C',
+          width: 1,
+          style: LineStyle.Dashed,
+        },
+        horzLine: {
+          color: '#848E9C',
+          width: 1,
+          style: LineStyle.Dashed,
+        },
+      },
+      handleScroll: true,
+      handleScale: true,
+    }),
+    []
+  );
   const candlestickSeriesOptions = useCallback((): DeepPartial<CandlestickSeriesOptions> => ({ upColor: '#0ECB81', downColor: '#F6465D', borderVisible: false, wickUpColor: '#0ECB81', wickDownColor: '#F6465D' }), []);
   const lineSeriesOptions = useCallback((): DeepPartial<LineStyleOptions & SeriesOptionsCommon> => ({ color: '#387ED9', lineWidth: 2 }), []);
   const volumeSeriesOptions = useCallback((): DeepPartial<HistogramSeriesOptions> => ({ priceFormat: { type: 'volume' }, priceScaleId: 'volume_scale' }), []);
@@ -83,12 +132,12 @@ const PriceChart: React.FC<{ symbol: string }> = ({ symbol }) => {
       .then((data: ChartKlineData[]) => {
         const sortedData = data.sort((a, b) => a.time - b.time);
         setHistoricalData(sortedData);
-        // 📍 3. คำนวณ SMA ทันทีที่ได้ข้อมูล
+        // Calculate SMA after fetching data
         setSmaData(calculateSMA(sortedData, smaPeriod));
       })
       .catch((err) => setChartError(err.message || 'Failed to load chart data'))
       .finally(() => setIsLoading(false));
-  }, [symbol, timeframe, smaPeriod]); // เพิ่ม smaPeriod เป็น dependency
+  }, [symbol, timeframe, smaPeriod]); // include smaPeriod as dependency
 
   // Effect 4: Series Management and Data Application
   useEffect(() => {
@@ -105,7 +154,7 @@ const PriceChart: React.FC<{ symbol: string }> = ({ symbol }) => {
       volumeSeriesRef.current = chartRef.current.addHistogramSeries(volumeSeriesOptions());
       try { chartRef.current.priceScale('volume_scale').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 }, visible: false }); } catch (e) { }
     }
-    // 📍 4. จัดการ SMA Series
+    // Manage SMA series
     if (!smaSeriesRef.current) {
       smaSeriesRef.current = chartRef.current.addLineSeries({ color: 'rgba(240, 185, 11, 0.9)', lineWidth: 1, crosshairMarkerVisible: false, priceLineVisible: false, lastValueVisible: false });
     }
@@ -154,7 +203,7 @@ const PriceChart: React.FC<{ symbol: string }> = ({ symbol }) => {
     volumeSeriesRef.current.update({ time: barToUpdate.time as Time, value: barToUpdate.volume, color: barToUpdate.close >= barToUpdate.open ? 'rgba(14, 203, 129, 0.4)' : 'rgba(246, 70, 93, 0.4)' });
     lastBarRef.current = barToUpdate;
 
-    // 📍 5. คำนวณและอัปเดต SMA แบบ Real-time
+    // Calculate and update SMA in real time
     const tempHistory = [...historicalData.filter(d => d.time !== barToUpdate.time), barToUpdate];
     const newSmaPoint = calculateSMA(tempHistory, smaPeriod).pop();
     if (newSmaPoint) {
@@ -171,10 +220,18 @@ const PriceChart: React.FC<{ symbol: string }> = ({ symbol }) => {
           <ChartControlButton onClick={() => setChartType('candle')} isActive={chartType === 'candle'}>Candles</ChartControlButton>
           <ChartControlButton onClick={() => setChartType('line')} isActive={chartType === 'line'}>Line</ChartControlButton>
         </div>
-        {/* 📍 6. เพิ่ม UI สำหรับตั้งค่า SMA */}
+        {/* SMA period input */}
         <div className="flex items-center space-x-2 border-l border-border pl-2">
           <label htmlFor="sma-period" className="text-xs text-muted-foreground">SMA:</label>
-          <input id="sma-period" type="number" value={smaPeriod} onChange={(e) => setSmaPeriod(Math.max(2, parseInt(e.target.value) || 2))} className="w-14 p-1 text-xs bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-yellow-500" />
+          <input
+            id="sma-period"
+            type="number"
+            value={smaPeriod}
+            onChange={(e) =>
+              setSmaPeriod(Math.max(2, parseInt(e.target.value) || 2))
+            }
+            className="w-14 p-1 text-xs bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--color-binance-yellow)]"
+          />
         </div>
       </div>
       <div className="flex-grow relative overflow-hidden">

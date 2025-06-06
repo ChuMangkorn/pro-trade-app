@@ -31,7 +31,13 @@ const OpenOrdersPanel = () => {
           order.price.toFixed(2),
           order.amount.toFixed(4),
           order.total.toFixed(2),
-          <button key="action" onClick={() => cancelOrder(order.id)} className="text-foreground hover:text-yellow-500">Cancel</button>
+          <button
+            key="action"
+            onClick={() => cancelOrder(order.id)}
+            className="text-foreground hover:text-[var(--color-binance-yellow)]"
+          >
+            Cancel
+          </button>
         ]} />
       )) : (
         <tr><td colSpan={headers.length} className="text-center text-muted-foreground py-4">No open orders</td></tr>
@@ -73,7 +79,7 @@ const FormInput: React.FC<{ id: string; label: string; value: string; onChange: 
         <div className="relative">
             <input
                 type="number" id={id} value={value} onChange={onChange} disabled={disabled}
-                className="w-full bg-background border-border rounded-md shadow-sm p-2 pr-12 text-sm focus:outline-none focus:ring-1 ring-yellow-500 disabled:opacity-50"
+                className="w-full bg-background border-border rounded-md shadow-sm p-2 pr-12 text-sm focus:outline-none focus:ring-1 ring-[var(--color-binance-yellow)] disabled:opacity-50"
                 placeholder={placeholder || '0.00'}
                 step="any"
             />
@@ -152,7 +158,6 @@ const TradeExecutionForm: React.FC<{ side: 'Buy' | 'Sell', orderType: OrderType,
 
       <FormInput id={`${side}-amount`} label="Amount" value={amount} onChange={e => setAmount(e.target.value)} unit={baseCurrency} />
       
-      {/* 📍 FIX: Replace Buttons with a Slider */}
       <div className="pt-1">
         <input
             type="range"
@@ -220,7 +225,19 @@ const ActivityPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
       <div className="flex-shrink-0 border-b border-border"><OrderForm symbol={symbol} /></div>
       <div className="flex-grow flex flex-col min-h-0">
         <div className="flex-shrink-0 flex items-center border-b border-border px-4">
-          {tabs.map(tab => ( <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 text-sm font-medium transition-colors outline-none ${ activeTab === tab ? 'border-b-2 border-yellow-500 text-foreground' : 'text-muted-foreground hover:text-foreground' }`}>{tab}</button>))}
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium transition-colors outline-none ${
+                activeTab === tab
+                  ? 'border-b-2 border-[var(--color-binance-yellow)] text-[var(--color-binance-yellow)]'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
         <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar">
           {renderContent()}

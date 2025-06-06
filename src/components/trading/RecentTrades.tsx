@@ -1,9 +1,10 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext';
+import { TradeData as WebSocketTradeData } from '@/hooks/useBinanceWebSocket';
 import SkeletonLoader from '@/components/common/SkeletonLoader';
 
-interface Trade {
+interface ProcessedTrade {
   id: number;
   price: number;
   quantity: number;
@@ -11,63 +12,85 @@ interface Trade {
   isBuyerMaker: boolean;
 }
 
-const RecentTrades: React.FC<{ symbol: string }> = ({ symbol }) => {
-  const { data, isLoading } = useSharedBinanceWebSocket();
+// Create a new component for the trade row to manage its own flash state
+const TradeRow: React.FC<{ trade: ProcessedTrade, isNew: boolean }> = ({ trade, isNew }) => {
+  const [flashClass, setFlashClass] = useState('');
 
-  // Memoize the formatted trades to prevent re-calculation on every render
-  const trades: Trade[] = useMemo(() => {
-    if (!data?.trades) return [];
-    return data.trades.map(trade => ({
+  useEffect(() => {
+    if (isNew) {
+      // Apply flash class based on trade direction
+      setFlashClass(trade.isBuyerMaker ? 'flash-sell' : 'flash-buy');
+
+      // Remove the class after the animation duration
+      const timer = setTimeout(() => {
+        setFlashClass('');
+      }, 700); // Match CSS animation duration
+
+      return () => clearTimeout(timer);
+    }
+  }, [isNew, trade.isBuyerMaker]);
+
+  return (
+    <div className={`grid grid-cols-3 gap-4 px-2 py-0.5 font-mono ${flashClass}`}>
+      <div className={trade.isBuyerMaker ? 'text-red-500' : 'text-green-500'}>
+        {trade.price.toFixed(2)}
+      </div>
+      <div className="text-right text-foreground">
+        {trade.quantity.toFixed(4)}
+      </div>
+      <div className="text-right text-muted-foreground">
+        {new Date(trade.time).toLocaleTimeString('en-GB')}
+      </div>
+    </div>
+  );
+};
+
+
+const RecentTrades: React.FC = () => {
+  const { data, isLoading } = useSharedBinanceWebSocket();
+  const latestTradeIdRef = useRef<number | null>(null);
+
+  const trades: ProcessedTrade[] = useMemo(() => {
+    if (!data?.recentTrades) return [];
+    return data.recentTrades.map((trade: WebSocketTradeData) => ({
       id: trade.t,
       price: parseFloat(trade.p),
       quantity: parseFloat(trade.q),
       time: trade.T,
       isBuyerMaker: trade.m,
-    })).slice(0, 50); // Limit to latest 50 trades
-  }, [data?.trades]);
+    })).slice(0, 30); // Limit to latest 30 trades
+  }, [data?.recentTrades]);
 
-  // Display a skeleton loader while the initial data is being fetched
+  useEffect(() => {
+    if (trades.length > 0) {
+      latestTradeIdRef.current = trades[0].id;
+    }
+  }, [trades]);
+
   if (isLoading && trades.length === 0) {
-    return (
-      <div className="p-2 space-y-2 bg-muted rounded-md h-full">
-        <SkeletonLoader className="w-full h-4" />
-        <SkeletonLoader className="w-2/3 h-4" />
-        <SkeletonLoader className="w-full h-4" />
-      </div>
-    );
+    return (<div className="p-2 space-y-1 bg-muted rounded-md h-full"><SkeletonLoader className="w-full h-4" /><SkeletonLoader className="w-2/3 h-4" /><SkeletonLoader className="w-full h-4" /><SkeletonLoader className="w-1/2 h-4" /></div>);
   }
 
   return (
-    // Ensure this component is a flex column that fills its parent's height
     <div className="h-full flex flex-col text-xs bg-muted">
-      {/* Header Title */}
       <div className="flex-shrink-0 p-2 border-b border-border">
         <h2 className="font-medium text-sm text-foreground">Trades</h2>
       </div>
 
-      {/* Column Headers */}
       <div className="flex-shrink-0 grid grid-cols-3 gap-4 py-1 px-2 text-muted-foreground">
         <span>Price(USDT)</span>
         <span className="text-right">Amount</span>
         <span className="text-right">Time</span>
       </div>
 
-      {/* Trades List - This will grow and scroll */}
       <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar pr-1">
-        {trades.map(trade => (
-          <div key={trade.id} className="grid grid-cols-3 gap-4 px-2 py-0.5 font-mono">
-            <div className={trade.isBuyerMaker ? 'text-red-500' : 'text-green-500'}>
-              {trade.price.toFixed(2)}
-            </div>
-            <div className="text-right text-foreground">
-              {trade.quantity.toFixed(4)}
-            </div>
-            <div className="text-right text-muted-foreground">
-              {new Date(trade.time).toLocaleTimeString('en-GB', {
-                hour: '2-digit', minute: '2-digit', second: '2-digit',
-              })}
-            </div>
-          </div>
+        {trades.map((trade, index) => (
+          <TradeRow
+            key={trade.id}
+            trade={trade}
+            // A trade is "new" if it's the very first one in the list and its ID is different from the last known "latest" ID
+            isNew={index === 0 && latestTradeIdRef.current !== null && trade.id > latestTradeIdRef.current}
+          />
         ))}
       </div>
     </div>

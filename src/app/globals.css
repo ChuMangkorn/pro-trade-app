@@ -80,3 +80,59 @@ body {
 .flash-down {
   animation: flash-down 0.3s ease-out;
 }
+
+.slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-binance-yellow);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -6px; /* Adjust to center thumb on the track */
+}
+
+.slider-thumb::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-binance-yellow);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-binance-yellow);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -6px; /* Adjust to center thumb on the track */
+}
+
+.slider-thumb::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-binance-yellow);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+@keyframes flash-trade-buy {
+  from { background-color: rgba(14, 203, 129, 0.4); }
+  to { background-color: transparent; }
+}
+
+@keyframes flash-trade-sell {
+  from { background-color: rgba(246, 70, 93, 0.4); }
+  to { background-color: transparent; }
+}
+
+.flash-buy {
+  animation: flash-trade-buy 0.7s ease-out;
+}
+
+.flash-sell {
+  animation: flash-trade-sell 0.7s ease-out;
+}

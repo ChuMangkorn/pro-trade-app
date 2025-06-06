@@ -1,199 +1,230 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext';
+import { useOrders, Order } from '@/context/OrderContext';
 
 // --- Helper Components for Tables ---
 const InfoTable: React.FC<{ headers: string[]; children: React.ReactNode }> = ({ headers, children }) => (
   <div className="p-2 text-xs overflow-x-auto custom-scrollbar">
     <table className="w-full min-w-[600px]">
-      <thead>
-        <tr className="text-left text-muted-foreground">
-          {headers.map(h => <th key={h} className="py-2 px-1 font-normal">{h}</th>)}
-        </tr>
-      </thead>
-      <tbody>
-        {children}
-      </tbody>
+      <thead><tr className="text-left text-muted-foreground">{headers.map(h => <th key={h} className="py-2 px-1 font-normal">{h}</th>)}</tr></thead>
+      <tbody>{children}</tbody>
     </table>
   </div>
 );
-
 const TableRow: React.FC<{ cells: (string | React.ReactNode)[] }> = ({ cells }) => (
-  <tr className="hover:bg-white/5">
-    {cells.map((cell, index) => (
-      <td key={index} className="py-2 px-1 border-t border-border">{cell}</td>
-    ))}
-  </tr>
+  <tr className="hover:bg-white/5">{cells.map((cell, index) => <td key={index} className="py-2 px-1 border-t border-border">{cell}</td>)}</tr>
 );
 
-// --- Mock Data and Components for Tabs ---
-const mockOpenOrders = [
-  { id: 1, time: '2023-10-27 10:30', pair: 'BTC/USDT', type: 'Limit', side: 'Buy', price: 60000.00, amount: 0.001, filled: "0%", total: 60.00 },
-  { id: 2, time: '2023-10-27 10:32', pair: 'ETH/USDT', type: 'Limit', side: 'Sell', price: 3000.00, amount: 0.05, filled: "0%", total: 150.00 },
-];
-
+// --- Panel Components using data from context ---
 const OpenOrdersPanel = () => {
-  const headers = ['Date', 'Pair', 'Type', 'Side', 'Price', 'Amount', 'Filled', 'Total', 'Action'];
+  const { openOrders, cancelOrder } = useOrders();
+  const headers = ['Date', 'Pair', 'Type', 'Side', 'Price', 'Amount', 'Total', 'Action'];
   return (
     <InfoTable headers={headers}>
-      {mockOpenOrders.map(order => (
+      {openOrders.length > 0 ? openOrders.map(order => (
         <TableRow key={order.id} cells={[
-          order.time, order.pair, order.type,
+          order.time,
+          order.symbol.replace('USDT', '/USDT'),
+          order.type,
           <span key="side" className={order.side === 'Buy' ? 'text-green-500' : 'text-red-500'}>{order.side}</span>,
-          order.price.toFixed(2), order.amount, order.filled, order.total.toFixed(2),
-          <button key="action" className="text-foreground hover:text-yellow-500">Cancel</button>
+          order.price.toFixed(2),
+          order.amount.toFixed(4),
+          order.total.toFixed(2),
+          <button key="action" onClick={() => cancelOrder(order.id)} className="text-foreground hover:text-yellow-500">Cancel</button>
         ]} />
-      ))}
+      )) : (
+        <tr><td colSpan={headers.length} className="text-center text-muted-foreground py-4">No open orders</td></tr>
+      )}
     </InfoTable>
   );
 };
 
-const mockTradeHistory = [
-    { id: 3, time: '2023-10-27 09:15', pair: 'BTC/USDT', type: 'Market', side: 'Buy', price: 59850.50, amount: 0.002, total: 119.70 },
-    { id: 4, time: '2023-10-26 18:45', pair: 'SOL/USDT', type: 'Limit', side: 'Sell', price: 140.20, amount: 2, total: 280.40 },
-];
-
 const TradeHistoryPanel = () => {
+    const { tradeHistory } = useOrders();
     const headers = ['Date', 'Pair', 'Type', 'Side', 'Price', 'Amount', 'Total'];
     return (
         <InfoTable headers={headers}>
-            {mockTradeHistory.map(trade => (
+            {tradeHistory.length > 0 ? tradeHistory.map(trade => (
                 <TableRow key={trade.id} cells={[
-                    trade.time, trade.pair, trade.type,
+                    trade.time,
+                    trade.symbol.replace('USDT', '/USDT'),
+                    trade.type,
                     <span key="side" className={trade.side === 'Buy' ? 'text-green-500' : 'text-red-500'}>{trade.side}</span>,
-                    trade.price.toFixed(2), trade.amount, trade.total.toFixed(2)
+                    trade.price.toFixed(2),
+                    trade.amount.toFixed(4),
+                    trade.total.toFixed(2)
                 ]} />
-            ))}
+            )) : (
+              <tr><td colSpan={headers.length} className="text-center text-muted-foreground py-4">No trade history</td></tr>
+            )}
         </InfoTable>
     );
 };
 
 
-// --- Trading Panel ---
-const FormInput: React.FC<{id: string; label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; unit: string;}> = 
-({ id, label, value, onChange, placeholder, unit }) => (
+// --- Trading Panel (Order Form) ---
+type OrderType = 'Limit' | 'Market' | 'Stop-limit';
+
+const FormInput: React.FC<{ id: string; label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; unit: string; disabled?: boolean; }> = 
+({ id, label, value, onChange, placeholder, unit, disabled = false }) => (
     <div>
         <label htmlFor={id} className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
         <div className="relative">
             <input
-                type="number" id={id} value={value} onChange={onChange}
-                className="w-full bg-background border-border rounded-md shadow-sm p-2 pr-12 text-sm focus:outline-none focus:ring-1 ring-yellow-500"
+                type="number" id={id} value={value} onChange={onChange} disabled={disabled}
+                className="w-full bg-background border-border rounded-md shadow-sm p-2 pr-12 text-sm focus:outline-none focus:ring-1 ring-yellow-500 disabled:opacity-50"
                 placeholder={placeholder || '0.00'}
+                step="any"
             />
             <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-muted-foreground">{unit}</span>
         </div>
     </div>
 );
 
-interface PercentButtonProps { children: React.ReactNode; onClick: () => void; }
-const PercentButton: React.FC<PercentButtonProps> = ({ children, onClick }) => (
-    <button type="button" onClick={onClick} className="flex-1 py-1 text-xs bg-[var(--color-binance-border)]/50 hover:bg-[var(--color-binance-border)] rounded-sm transition-colors">
-        {children}
-    </button>
-);
-
-const TradePanel: React.FC<{ symbol: string }> = ({ symbol }) => {
+const TradeExecutionForm: React.FC<{ side: 'Buy' | 'Sell', orderType: OrderType, symbol: string }> = ({ side, orderType, symbol }) => {
   const { data } = useSharedBinanceWebSocket();
-  const [orderType, setOrderType] = useState<'limit' | 'market'>('limit');
-  const [buyPrice, setBuyPrice] = useState('');
-  const [buyAmount, setBuyAmount] = useState('');
-  const [sellPrice, setSellPrice] = useState('');
-  const [sellAmount, setSellAmount] = useState('');
+  const { placeOrder } = useOrders();
+  const [price, setPrice] = useState('');
+  const [amount, setAmount] = useState('');
+  const [stopPrice, setStopPrice] = useState('');
+  const [sliderValue, setSliderValue] = useState(0); // State for slider position
 
   const baseCurrency = symbol.replace('USDT', '');
   const quoteCurrency = 'USDT';
-  const availableUSDT = 10000.00;
+  const availableQuote = 10000.00;
   const availableBase = 0.5;
+  const availableBalance = side === 'Buy' ? availableQuote : availableBase;
+  const balanceUnit = side === 'Buy' ? quoteCurrency : baseCurrency;
 
   useEffect(() => {
     if (data?.price) {
-      const priceStr = parseFloat(data.price).toFixed(2);
-      setBuyPrice(priceStr);
-      setSellPrice(priceStr);
+      const currentPrice = parseFloat(data.price).toFixed(2);
+      if (orderType !== 'Limit' && orderType !== 'Stop-limit') { setPrice(''); } 
+      else if (price === '') { setPrice(currentPrice); }
     }
-  }, [data?.price]);
+  }, [data?.price, orderType, price]);
 
-  const buyTotal = useMemo(() => parseFloat(buyPrice) * parseFloat(buyAmount) || 0, [buyPrice, buyAmount]);
-  const sellTotal = useMemo(() => parseFloat(sellPrice) * parseFloat(sellAmount) || 0, [sellPrice, sellAmount]);
+  // Update amount when slider changes
+  useEffect(() => {
+    const percentage = sliderValue / 100;
+    if (side === 'Buy') {
+      const currentPrice = parseFloat(price || data?.price || '0');
+      if (currentPrice > 0) {
+        const totalValue = availableBalance * percentage;
+        const newAmount = totalValue / currentPrice;
+        setAmount(newAmount.toFixed(4));
+      }
+    } else { // Sell
+      const newAmount = availableBalance * percentage;
+      setAmount(newAmount.toFixed(4));
+    }
+  }, [sliderValue, side, availableBalance, price, data?.price]);
 
-  const handleSubmit = (side: 'buy' | 'sell') => (e: React.FormEvent) => {
+
+  const total = useMemo(() => {
+    if (orderType === 'Market' && side === 'Buy') return parseFloat(amount) || 0;
+    return (parseFloat(price) * parseFloat(amount)) || 0;
+  }, [price, amount, orderType, side]);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Mock Order Placed: ${side}`);
+    if (!amount || (orderType !== 'Market' && !price)) return;
+    placeOrder({ symbol, type: orderType, side, price: orderType === 'Market' ? parseFloat(data?.price || '0') : parseFloat(price), amount: parseFloat(amount), total: total });
+    setAmount('');
+    setSliderValue(0); // Reset slider
   };
 
   return (
-    <div className="p-4 h-full">
-        <div className="flex items-center space-x-4 mb-3">
-            <button type="button" onClick={() => setOrderType('limit')} className={`text-sm ${orderType === 'limit' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>Limit</button>
-            <button type="button" onClick={() => setOrderType('market')} className={`text-sm ${orderType === 'market' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>Market</button>
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="flex justify-between text-xs">
+        <span className="text-muted-foreground">Avbl</span>
+        <span>{availableBalance.toFixed(4)} {balanceUnit}</span>
+      </div>
+      
+      {orderType === 'Limit' || orderType === 'Stop-limit' ? (
+        <FormInput id={`${side}-price`} label="Price" value={price} onChange={e => setPrice(e.target.value)} unit={quoteCurrency} />
+      ) : (
+        <FormInput id={`${side}-price`} label="Price" value="Market" onChange={()=>{}} unit={quoteCurrency} disabled={true}/>
+      )}
+
+      {orderType === 'Stop-limit' && ( <FormInput id={`${side}-stop-price`} label="Stop" value={stopPrice} onChange={e => setStopPrice(e.target.value)} unit={quoteCurrency} /> )}
+
+      <FormInput id={`${side}-amount`} label="Amount" value={amount} onChange={e => setAmount(e.target.value)} unit={baseCurrency} />
+      
+      {/* 📍 FIX: Replace Buttons with a Slider */}
+      <div className="pt-1">
+        <input
+            type="range"
+            min="0"
+            max="100"
+            value={sliderValue}
+            onChange={(e) => setSliderValue(Number(e.target.value))}
+            className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg dark:bg-gray-600 slider-thumb"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground mt-1 px-1">
+            <span>0%</span>
+            <span>25%</span>
+            <span>50%</span>
+            <span>75%</span>
+            <span>100%</span>
         </div>
-        <div className="grid grid-cols-2 gap-x-6 text-xs">
-            <form onSubmit={handleSubmit('buy')} className="space-y-2">
-                <div className="flex justify-between"><span className="text-muted-foreground">Avbl</span><span>{availableUSDT.toFixed(2)} {quoteCurrency}</span></div>
-                <FormInput id="buy-price" label="Price" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} unit={quoteCurrency} />
-                <FormInput id="buy-amount" label="Amount" value={buyAmount} onChange={e => setBuyAmount(e.target.value)} unit={baseCurrency} />
-                <div className="flex justify-between space-x-2">
-                    <PercentButton onClick={() => alert('25%')}>25%</PercentButton>
-                    <PercentButton onClick={() => alert('50%')}>50%</PercentButton>
-                    <PercentButton onClick={() => alert('75%')}>75%</PercentButton>
-                    <PercentButton onClick={() => alert('100%')}>100%</PercentButton>
-                </div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Total</span><span>{buyTotal.toFixed(2)} {quoteCurrency}</span></div>
-                <button type="submit" disabled={!buyAmount} className="w-full py-2 px-4 rounded-md text-sm font-medium bg-green-500 hover:bg-green-500/90 text-white disabled:opacity-50">Buy {baseCurrency}</button>
-            </form>
-            <form onSubmit={handleSubmit('sell')} className="space-y-2">
-                <div className="flex justify-between"><span className="text-muted-foreground">Avbl</span><span>{availableBase.toFixed(4)} {baseCurrency}</span></div>
-                <FormInput id="sell-price" label="Price" value={sellPrice} onChange={e => setSellPrice(e.target.value)} unit={quoteCurrency} />
-                <FormInput id="sell-amount" label="Amount" value={sellAmount} onChange={e => setSellAmount(e.target.value)} unit={baseCurrency} />
-                <div className="flex justify-between space-x-2">
-                    <PercentButton onClick={() => alert('25%')}>25%</PercentButton>
-                    <PercentButton onClick={() => alert('50%')}>50%</PercentButton>
-                    <PercentButton onClick={() => alert('75%')}>75%</PercentButton>
-                    <PercentButton onClick={() => alert('100%')}>100%</PercentButton>
-                </div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Total</span><span>{sellTotal.toFixed(2)} {quoteCurrency}</span></div>
-                <button type="submit" disabled={!sellAmount} className="w-full py-2 px-4 rounded-md text-sm font-medium bg-red-500 hover:bg-red-500/90 text-white disabled:opacity-50">Sell {baseCurrency}</button>
-            </form>
-        </div>
+      </div>
+      
+      <div className="flex justify-between text-xs">
+        <span className="text-muted-foreground">Total</span>
+        <span>{total.toFixed(2)} {quoteCurrency}</span>
+      </div>
+
+      <button type="submit" disabled={!amount} className={`w-full py-2 rounded-md text-sm font-medium text-white disabled:opacity-50 ${ side === 'Buy' ? 'bg-green-500 hover:bg-green-500/90' : 'bg-red-500 hover:bg-red-500/90' }`}>
+        {side === 'Buy' ? `Buy ${baseCurrency}` : `Sell ${baseCurrency}`}
+      </button>
+    </form>
+  );
+};
+
+const OrderForm: React.FC<{ symbol: string }> = ({ symbol }) => {
+  const [orderType, setOrderType] = useState<OrderType>('Limit');
+  return (
+    <div className="p-2 h-full">
+      <div className="flex items-center space-x-4 mb-3">
+        <button type="button" onClick={() => setOrderType('Limit')} className={`text-sm ${orderType === 'Limit' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>Limit</button>
+        <button type="button" onClick={() => setOrderType('Market')} className={`text-sm ${orderType === 'Market' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>Market</button>
+        <button type="button" onClick={() => setOrderType('Stop-limit')} className={`text-sm ${orderType === 'Stop-limit' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>Stop-limit</button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 text-xs">
+        <TradeExecutionForm side="Buy" orderType={orderType} symbol={symbol} />
+        <TradeExecutionForm side="Sell" orderType={orderType} symbol={symbol} />
+      </div>
     </div>
   );
 };
 
 
-// --- Main Activity Panel ---
+// --- Main Activity Panel (Structure is the same) ---
 const ActivityPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
-  const [activeTab, setActiveTab] = useState<'Trade' | 'Open Orders' | 'Trade History'>('Trade');
+  const [activeTab, setActiveTab] = useState<'Open Orders' | 'Trade History'>('Open Orders');
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Trade': return <TradePanel symbol={symbol} />;
       case 'Open Orders': return <OpenOrdersPanel />;
       case 'Trade History': return <TradeHistoryPanel />;
       default: return null;
     }
   };
 
-  const tabs: ('Trade' | 'Open Orders' | 'Trade History')[] = ['Trade', 'Open Orders', 'Trade History'];
+  const tabs: ('Open Orders' | 'Trade History')[] = ['Open Orders', 'Trade History'];
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 flex items-center border-b border-border px-4">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium transition-colors outline-none ${
-              activeTab === tab
-                ? 'border-b-2 border-yellow-500 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-      <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar">
-        {renderContent()}
+      <div className="flex-shrink-0 border-b border-border"><OrderForm symbol={symbol} /></div>
+      <div className="flex-grow flex flex-col min-h-0">
+        <div className="flex-shrink-0 flex items-center border-b border-border px-4">
+          {tabs.map(tab => ( <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 text-sm font-medium transition-colors outline-none ${ activeTab === tab ? 'border-b-2 border-yellow-500 text-foreground' : 'text-muted-foreground hover:text-foreground' }`}>{tab}</button>))}
+        </div>
+        <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );

@@ -1,20 +1,17 @@
 import React from 'react';
 import TradingLayout from '@/components/layout/TradingLayout';
 
-// Add this function to help Next.js with type inference for params
 export async function generateStaticParams() {
-  // We can return a default or popular symbol,
-  // or even an empty array if we don't need static generation.
-  // This helps fix the type issue during the build.
+  // This helps Next.js with type inference and can pre-build this page
   return [{ symbol: 'BTCUSDT' }];
 }
 
 type PageProps = {
   params: { symbol: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
 };
 
-export default function TradeSymbolPage({ params }: PageProps) {
-  // params.symbol will be 'BTCUSDT', 'ETHUSDT', etc.
+// 📍 FIX: เพิ่ม 'async' เข้าไปหน้า function
+// การแก้ไขนี้จำเป็นสำหรับ Next.js เวอร์ชันใหม่
+export default async function TradeSymbolPage({ params }: PageProps) {
   return <TradingLayout symbol={params.symbol} />;
 }

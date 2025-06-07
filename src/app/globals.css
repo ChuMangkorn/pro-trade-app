@@ -70,12 +70,12 @@ body {
 
 /* Flash Animations */
 @keyframes flash-up {
-  from { background-color: rgba(14, 203, 129, 0.5); }
+  /* from { background-color: rgba(14, 203, 129, 0.5); } */
   to { background-color: transparent; }
 }
 
 @keyframes flash-down {
-  from { background-color: rgba(246, 70, 93, 0.5); }
+  /* from { background-color: rgba(246, 70, 93, 0.5); } */
   to { background-color: transparent; }
 }
 
@@ -126,12 +126,12 @@ body {
 }
 
 @keyframes flash-trade-buy {
-  from { background-color: rgba(14, 203, 129, 0.4); }
+  /* from { background-color: rgba(14, 203, 129, 0.4); } */
   to { background-color: transparent; }
 }
 
 @keyframes flash-trade-sell {
-  from { background-color: rgba(246, 70, 93, 0.4); }
+  /* from { background-color: rgba(246, 70, 93, 0.4); } */
   to { background-color: transparent; }
 }
 

@@ -79,62 +79,62 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
     };
   }, [data?.asks, data?.bids, precision]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container || maxTotal === 0) return;
+  // useEffect(() => {
+  //   const canvas = canvasRef.current;
+  //   const container = containerRef.current;
+  //   if (!canvas || !container || maxTotal === 0) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  //   const ctx = canvas.getContext('2d');
+  //   if (!ctx) return;
 
-    const computedStyle = getComputedStyle(container);
-    const buyColor = computedStyle.getPropertyValue('--color-binance-buy-transparent').trim();
-    const sellColor = computedStyle.getPropertyValue('--color-binance-sell-transparent').trim();
+  //   const computedStyle = getComputedStyle(container);
+  //   const buyColor = computedStyle.getPropertyValue('--color-binance-buy-transparent').trim();
+  //   const sellColor = computedStyle.getPropertyValue('--color-binance-sell-transparent').trim();
 
-    const draw = () => {
-      const { width, height } = container.getBoundingClientRect();
-      canvas.width = width;
-      canvas.height = height;
-      ctx.clearRect(0, 0, width, height);
+  //   const draw = () => {
+  //     const { width, height } = container.getBoundingClientRect();
+  //     canvas.width = width;
+  //     canvas.height = height;
+  //     ctx.clearRect(0, 0, width, height);
 
-      if (asks.length > 0) {
-        ctx.beginPath();
-        ctx.moveTo(0, height / 2);
-        for (let i = asks.length - 1; i >= 0; i--) {
-          const x = (asks[i].total / maxTotal) * width;
-          const y = (height / 2) - ((asks.length - 1 - i + 1) / (asks.length + 1)) * (height / 2);
-          ctx.lineTo(x, y);
-        }
-        const lastAskX = (asks[0].total / maxTotal) * width;
-        ctx.lineTo(lastAskX, 0);
-        ctx.lineTo(0, 0);
-        ctx.closePath();
-        ctx.fillStyle = sellColor;
-        ctx.fill();
-      }
+  //     if (asks.length > 0) {
+  //       ctx.beginPath();
+  //       ctx.moveTo(0, height / 2);
+  //       for (let i = asks.length - 1; i >= 0; i--) {
+  //         const x = (asks[i].total / maxTotal) * width;
+  //         const y = (height / 2) - ((asks.length - 1 - i + 1) / (asks.length + 1)) * (height / 2);
+  //         ctx.lineTo(x, y);
+  //       }
+  //       const lastAskX = (asks[0].total / maxTotal) * width;
+  //       ctx.lineTo(lastAskX, 0);
+  //       ctx.lineTo(0, 0);
+  //       ctx.closePath();
+  //       ctx.fillStyle = sellColor;
+  //       ctx.fill();
+  //     }
 
-      if (bids.length > 0) {
-        ctx.beginPath();
-        ctx.moveTo(0, height / 2);
-        for (let i = 0; i < bids.length; i++) {
-          const x = (bids[i].total / maxTotal) * width;
-          const y = (height / 2) + ((i + 1) / (bids.length + 1)) * (height / 2);
-          ctx.lineTo(x, y);
-        }
-        const lastBidX = (bids[bids.length - 1].total / maxTotal) * width;
-        ctx.lineTo(lastBidX, height);
-        ctx.lineTo(0, height);
-        ctx.closePath();
-        ctx.fillStyle = buyColor;
-        ctx.fill();
-      }
-    };
+  //     if (bids.length > 0) {
+  //       ctx.beginPath();
+  //       ctx.moveTo(0, height / 2);
+  //       for (let i = 0; i < bids.length; i++) {
+  //         const x = (bids[i].total / maxTotal) * width;
+  //         const y = (height / 2) + ((i + 1) / (bids.length + 1)) * (height / 2);
+  //         ctx.lineTo(x, y);
+  //       }
+  //       const lastBidX = (bids[bids.length - 1].total / maxTotal) * width;
+  //       ctx.lineTo(lastBidX, height);
+  //       ctx.lineTo(0, height);
+  //       ctx.closePath();
+  //       ctx.fillStyle = buyColor;
+  //       ctx.fill();
+  //     }
+  //   };
 
-    const observer = new ResizeObserver(draw);
-    observer.observe(container);
-    draw();
-    return () => observer.disconnect();
-  }, [asks, bids, maxTotal]);
+  //   const observer = new ResizeObserver(draw);
+  //   observer.observe(container);
+  //   draw();
+  //   return () => observer.disconnect();
+  // }, [asks, bids, maxTotal]);
 
   const renderOrderRow = (order: Order, isAsk: boolean) => {
     const depthPercentage = maxTotal > 0 ? (order.total / maxTotal) * 100 : 0;

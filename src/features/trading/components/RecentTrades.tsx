@@ -2,7 +2,7 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext';
 import { TradeData as WebSocketTradeData } from '@/hooks/useBinanceWebSocket';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 interface ProcessedTrade {
   id: number;

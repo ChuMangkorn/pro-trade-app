@@ -10,7 +10,6 @@ import {
 } from 'lightweight-charts';
 import { useIsDarkMode } from '@/hooks/useIsDarkMode';
 import {
-  calculateSMA,
   getTimeframeMilliseconds,
   ChartKlineData,
 } from '@/utils/chart';

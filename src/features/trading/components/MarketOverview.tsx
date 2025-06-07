@@ -1,7 +1,7 @@
 'use client';
 import React, { useMemo } from 'react';
 import { useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext';
-import SkeletonLoader from '@/components/common/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 interface MarketOverviewProps {
   symbol: string;

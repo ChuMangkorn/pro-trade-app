@@ -1,11 +1,11 @@
 'use client';
 import React, { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import SymbolSelector from '@/components/common/SymbolSelector';
+import SymbolSelector from '@/components/ui/SymbolSelector';
 import { useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext';
-import Flashable from '@/components/common/Flashable';
-import DarkModeToggle from '@/components/common/DarkModeToggle';
-import SymbolSearchModal from '@/components/common/SymbolSearchModal';
+import Flashable from '@/components/ui/Flashable';
+import DarkModeToggle from '@/components/ui/DarkModeToggle';
+import SymbolSearchModal from '@/components/ui/SymbolSearchModal';
 
 const StatItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div className="text-xs px-3">

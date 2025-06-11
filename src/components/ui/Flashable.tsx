@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, ReactNode } from 'react';
 interface FlashableProps {
   children: ReactNode;
   value: number | string;
-  // Optional: A unique key can force a re-flash even if the value is the same (e.g., for repeated trades at the same price)
   flashKey?: string | number; 
 }
 
@@ -27,7 +26,7 @@ const Flashable: React.FC<FlashableProps> = ({ children, value, flashKey }) => {
 
       const timer = setTimeout(() => {
         setFlashClass('');
-      }, 500); // Duration should match the animation duration in CSS
+      }, 500); 
 
       return () => clearTimeout(timer);
     }

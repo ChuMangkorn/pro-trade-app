@@ -181,7 +181,7 @@ const TradeExecutionForm: React.FC<{ side: 'Buy' | 'Sell', orderType: OrderType,
         <span>{total.toFixed(2)} {quoteCurrency}</span>
       </div>
 
-      <button type="submit" disabled={!amount} className={`w-full py-2 rounded-md text-sm font-medium text-white disabled:opacity-50 ${ side === 'Buy' ? 'bg-green-500 hover:bg-green-500/90' : 'bg-red-500 hover:bg-red-500/90' }`}>
+      <button type="submit" disabled={!amount} className={`w-full py-2 rounded-md text-sm font-medium text-white disabled:opacity-50 ${ side === 'Buy' ? 'hover:bg-green-500/90' : 'hover:bg-red-500/90' }`}>
         {side === 'Buy' ? `Buy ${baseCurrency}` : `Sell ${baseCurrency}`}
       </button>
     </form>

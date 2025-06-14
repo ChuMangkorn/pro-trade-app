@@ -3,7 +3,6 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SymbolSelector from '@/components/ui/SymbolSelector';
 import { useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext';
-import Flashable from '@/components/ui/Flashable';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import SymbolSearchModal from '@/components/ui/SymbolSearchModal';
 
@@ -23,10 +22,9 @@ const TradeTopBar: React.FC<{ symbol: string }> = ({ symbol }) => {
     if (newSymbol && newSymbol !== symbol) {
       router.push(`/trade/${newSymbol}`);
     }
-    setIsModalOpen(false); // Close modal after selection
+    setIsModalOpen(false);
   }, [router, symbol]);
 
-  // Add keyboard shortcut to open search modal (e.g., Ctrl+K or Cmd+K)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
@@ -41,10 +39,11 @@ const TradeTopBar: React.FC<{ symbol: string }> = ({ symbol }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-
+  // --- START: MODIFIED SECTION ---
+  // เราจะใช้แค่ isPositive24h ในการตัดสินสีทั้งหมด เพื่อให้สอดคล้องกัน
   const price = data?.price ? parseFloat(data.price) : 0;
   const priceChangePercent = data?.priceChangePercent ? parseFloat(data.priceChangePercent) : 0;
-  const isPositive = priceChangePercent >= 0;
+  const isPositive24h = priceChangePercent >= 0;
 
   const formatCompact = (val: string | undefined) => {
     if (!val) return '...';
@@ -57,12 +56,12 @@ const TradeTopBar: React.FC<{ symbol: string }> = ({ symbol }) => {
         <div className="flex items-center h-full px-4">
           <div className="flex items-center space-x-4 pr-4 border-r border-border">
             <SymbolSelector currentSymbol={symbol} onClick={() => setIsModalOpen(true)} />
+
+            {/* ทำให้สีของราคาหลักใช้เงื่อนไขเดียวกับ 24h Change */}
             {data?.price && (
-              <Flashable value={price}>
-                <div className={`text-lg font-semibold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                  {price.toFixed(2)}
-                </div>
-              </Flashable>
+              <div className={`text-lg font-semibold ${isPositive24h ? 'text-green-500' : 'text-red-500'}`}>
+                {price.toFixed(2)}
+              </div>
             )}
           </div>
 
@@ -70,13 +69,12 @@ const TradeTopBar: React.FC<{ symbol: string }> = ({ symbol }) => {
             <StatItem
               label="24h Change"
               value={
-                <Flashable value={priceChangePercent}>
-                  <span className={isPositive ? 'text-green-500' : 'text-red-500'}>
-                    {isPositive ? '+' : ''}{priceChangePercent.toFixed(2)}%
-                  </span>
-                </Flashable>
+                <span className={isPositive24h ? 'text-green-500' : 'text-red-500'}>
+                  {isPositive24h ? '+' : ''}{priceChangePercent.toFixed(2)}%
+                </span>
               }
             />
+            {/* ... StatItem อื่นๆ เหมือนเดิม ... */}
             <StatItem label="24h High" value={data ? parseFloat(data.highPrice).toFixed(2) : '...'} />
             <StatItem label="24h Low" value={data ? parseFloat(data.lowPrice).toFixed(2) : '...'} />
             <StatItem label={`24h Volume (${symbol.replace('USDT', '')})`} value={formatCompact(data?.volume)} />
@@ -97,5 +95,6 @@ const TradeTopBar: React.FC<{ symbol: string }> = ({ symbol }) => {
     </>
   );
 };
+// --- END: MODIFIED SECTION ---
 
 export default TradeTopBar;

@@ -1,34 +1,55 @@
 @import "tailwindcss";
 
-@theme {
-  /* Define Binance-like color variables */
-  --color-binance-bg: #14151A;
-  --color-binance-panel-bg: #1E2026;
-  --color-binance-border: #2B3139;
-  --color-binance-text-primary: #EAECEF;
-  --color-binance-text-secondary: #848E9C;
+/* --- START: CORRECTED THEME DEFINITIONS --- */
+
+/* 1. กำหนดค่าสีพื้นฐาน (Light Mode) */
+:root {
+  --color-binance-bg: #FFFFFF;
+  --color-binance-panel-bg: #FAFAFA; /* สีเทาอ่อนสำหรับ Panel ใน Light Mode */
+  --color-binance-border: #F0F0F0;
+  --color-binance-text-primary: #1E2026; /* สีตัวหนังสือดำสำหรับ Light Mode */
+  --color-binance-text-secondary: #707A8A;
   --color-binance-buy: #0ECB81;
   --color-binance-sell: #F6465D;
   --color-binance-buy-transparent: rgba(14, 203, 129, 0.15);
   --color-binance-sell-transparent: rgba(246, 70, 93, 0.15);
   --color-binance-yellow: #F0B90B;
+  --color-binance-hover: rgba(0, 0, 0, 0.04);
+}
+
+/* 2. กำหนดค่าสีสำหรับ Dark Mode (เมื่อมี class .dark) */
+.dark {
+  --color-binance-bg: #14151A;
+  --color-binance-panel-bg: #1E2026;
+  --color-binance-border: #2B3139;
+  --color-binance-text-primary: #EAECEF;
+  --color-binance-text-secondary: #848E9C;
   --color-binance-hover: rgba(255, 255, 255, 0.04);
 }
 
-/* Apply variables in dark mode */
-@custom-variant dark (&:where(.dark, .dark *));
 
+/* 3. กำหนดตัวแปรกลางสำหรับ Tailwind ให้เรียกใช้งาน */
 @layer theme {
+  /* Light mode (default) */
+  body {
+    --color-background: var(--color-binance-bg);
+    --color-foreground: var(--color-binance-text-primary);
+    --color-muted: var(--color-binance-panel-bg);
+    --color-muted-foreground: var(--color-binance-text-secondary);
+    --color-border: var(--color-binance-border);
+  }
+  /* Dark mode override */
   .dark {
     --color-background: var(--color-binance-bg);
     --color-foreground: var(--color-binance-text-primary);
     --color-muted: var(--color-binance-panel-bg);
     --color-muted-foreground: var(--color-binance-text-secondary);
     --color-border: var(--color-binance-border);
-    --color-green-500: var(--color-binance-buy);
-    --color-red-500: var(--color-binance-sell);
   }
 }
+
+/* --- END: CORRECTED THEME DEFINITIONS --- */
+
 
 /* Font Variables */
 :root {
@@ -46,7 +67,7 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
   line-height: 1.5;
-  font-size: 14px; /* Set a base font size */
+  font-size: 14px;
 }
 
 /* Custom Scrollbar Styling */
@@ -95,26 +116,7 @@ body {
   background: var(--color-binance-yellow);
   border-radius: 50%;
   cursor: pointer;
-  margin-top: -6px; /* Adjust to center thumb on the track */
-}
-
-.slider-thumb::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  background: var(--color-binance-yellow);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.slider-thumb::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--color-binance-yellow);
-  border-radius: 50%;
-  cursor: pointer;
-  margin-top: -6px; /* Adjust to center thumb on the track */
+  margin-top: -6px;
 }
 
 .slider-thumb::-moz-range-thumb {

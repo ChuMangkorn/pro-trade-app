@@ -1,12 +1,12 @@
 'use client';
-import React, { Suspense, useEffect } from 'react'; // useEffect is required for dynamic title updates
+import React, { Suspense, useEffect } from 'react';
 import OrderBook from '@/features/trading/components/OrderBook';
 import PriceChart from '@/features/trading/components/PriceChart';
 import RecentTrades from '@/features/trading/components/RecentTrades';
 import TickerList from '@/features/trading/components/TickerList';
 import TradeTopBar from '@/components/layout/TradeTopBar';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import { BinanceWebSocketProvider, useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext'; // Provides shared WebSocket data
+import { BinanceWebSocketProvider, useSharedBinanceWebSocket } from '@/context/BinanceWebSocketContext';
 import { OrderProvider } from '@/context/OrderContext';
 import ActivityPanel from '@/features/trading/components/ActivityPanel';
 
@@ -22,7 +22,6 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Inner component that updates the title using data from the WebSocket
 const DynamicTitleUpdater: React.FC<{ symbol: string }> = ({ symbol }) => {
   const { data } = useSharedBinanceWebSocket();
   const originalTitle = 'ProTrade | Real-Time Crypto Trading';
@@ -35,14 +34,12 @@ const DynamicTitleUpdater: React.FC<{ symbol: string }> = ({ symbol }) => {
       });
       document.title = `${formattedPrice} | ${symbol.replace('USDT', '/USDT')} | ProTrade`;
     }
-
-    // Cleanup function: Revert title when component unmounts or symbol changes
     return () => {
       document.title = originalTitle;
     };
   }, [data?.price, symbol, originalTitle]);
 
-  return null; // This component does not render anything
+  return null;
 };
 
 
@@ -50,21 +47,17 @@ const TradingLayout: React.FC<TradingLayoutProps> = ({ symbol }) => {
   return (
     <OrderProvider>
       <BinanceWebSocketProvider symbol={symbol}>
-        {/* Render the component that updates the document title */}
-        {/* 4. Render the component created above */}
         <DynamicTitleUpdater symbol={symbol} />
-        <div className="h-screen flex flex-col bg-background dark text-foreground">
+        <div className="h-screen flex flex-col bg-background text-foreground">
           <TradeTopBar symbol={symbol} />
           <main className="flex-grow grid grid-cols-1 lg:grid-cols-12 grid-rows-1 gap-2 p-2 min-h-0">
 
-            {/* Left Sidebar: OrderBook */}
             <div className="lg:col-span-3 bg-muted rounded-md overflow-hidden">
               <Suspense fallback={<LoadingFallback />}>
                 <OrderBook symbol={symbol} />
               </Suspense>
             </div>
 
-            {/* Main Content (Chart and Activity) */}
             <div className="lg:col-span-7 flex flex-col gap-2">
               <div className="flex-grow min-h-0 bg-muted rounded-md overflow-hidden">
                 <Suspense fallback={<LoadingFallback />}>
@@ -77,8 +70,6 @@ const TradingLayout: React.FC<TradingLayoutProps> = ({ symbol }) => {
                 </Suspense>
               </div>
             </div>
-
-            {/* Right Sidebar: TickerList and RecentTrades */}
             <div className="lg:col-span-2 flex flex-col gap-2">
               <div className="flex-1 min-h-0 bg-muted rounded-md overflow-hidden">
                 <Suspense fallback={<LoadingFallback />}>

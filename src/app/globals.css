@@ -5,9 +5,11 @@
 /* 1. กำหนดค่าสีพื้นฐาน (Light Mode) */
 :root {
   --color-binance-bg: #FFFFFF;
-  --color-binance-panel-bg: #FAFAFA; /* สีเทาอ่อนสำหรับ Panel ใน Light Mode */
+  --color-binance-panel-bg: #FAFAFA;
+  /* สีเทาอ่อนสำหรับ Panel ใน Light Mode */
   --color-binance-border: #F0F0F0;
-  --color-binance-text-primary: #1E2026; /* สีตัวหนังสือดำสำหรับ Light Mode */
+  --color-binance-text-primary: #1E2026;
+  /* สีตัวหนังสือดำสำหรับ Light Mode */
   --color-binance-text-secondary: #707A8A;
   --color-binance-buy: #0ECB81;
   --color-binance-sell: #F6465D;
@@ -30,6 +32,7 @@
 
 /* 3. กำหนดตัวแปรกลางสำหรับ Tailwind ให้เรียกใช้งาน */
 @layer theme {
+
   /* Light mode (default) */
   body {
     --color-background: var(--color-binance-bg);
@@ -38,6 +41,7 @@
     --color-muted-foreground: var(--color-binance-text-secondary);
     --color-border: var(--color-binance-border);
   }
+
   /* Dark mode override */
   .dark {
     --color-background: var(--color-binance-bg);
@@ -91,13 +95,51 @@ body {
 
 /* Flash Animations */
 @keyframes flash-up {
-  from { background-color: rgba(14, 203, 129, 0.5); }
-  to { background-color: transparent; }
+  from {
+    color: var(--color-up);
+  }
+
+  to {
+    color: inherit;
+  }
+}
+
+@keyframes flash-up-bg {
+  from {
+    background-color: rgba(0, 184, 136, 0.3);
+  }
+
+  to {
+    background-color: transparent;
+  }
+}
+
+@keyframes flash-down-bg {
+  from {
+    background-color: rgba(246, 70, 93, 0.3);
+  }
+
+  to {
+    background-color: transparent;
+  }
+}
+
+.bg-flash-up {
+  animation: flash-up-bg 500ms ease-out;
+}
+
+.bg-flash-down {
+  animation: flash-down-bg 500ms ease-out;
 }
 
 @keyframes flash-down {
-  from { background-color: rgba(246, 70, 93, 0.5); }
-  to { background-color: transparent; }
+  from {
+    background-color: rgba(246, 70, 93, 0.5);
+  }
+
+  to {
+    background-color: transparent;
+  }
 }
 
 .flash-up {
@@ -128,13 +170,23 @@ body {
 }
 
 @keyframes flash-trade-buy {
-  from { background-color: rgba(14, 203, 129, 0.4); }
-  to { background-color: transparent; }
+  from {
+    background-color: rgba(14, 203, 129, 0.4);
+  }
+
+  to {
+    background-color: transparent;
+  }
 }
 
 @keyframes flash-trade-sell {
-  from { background-color: rgba(246, 70, 93, 0.4); }
-  to { background-color: transparent; }
+  from {
+    background-color: rgba(246, 70, 93, 0.4);
+  }
+
+  to {
+    background-color: transparent;
+  }
 }
 
 .flash-buy {

@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 interface KlineData {
-  t: number;
+  t: number; 
   o: string;
   h: string;
   l: string;
@@ -10,15 +10,14 @@ interface KlineData {
   v: string;
 }
 
-export interface TradeData { // Exporting for PriceChart
-  E: number; // Event time
-  T: number; // Trade time (timestamp in milliseconds)
-  s: string; // Symbol
-  t: number; // Trade ID
-  p: string; // Price
-  q: string; // Quantity
-  m: boolean; // Is the buyer the maker?
-  // Other fields like 'b' (buyer order ID), 'a' (seller order ID) exist but might not be needed for chart
+export interface TradeData { 
+  E: number; 
+  T: number; 
+  s: string; 
+  t: number; 
+  p: string; 
+  q: string; 
+  m: boolean;
 }
 
 interface BinanceWebSocketData {
@@ -30,9 +29,9 @@ interface BinanceWebSocketData {
   lowPrice: string;
   bids: [string, string][];
   asks: [string, string][];
-  recentTrades: TradeData[]; // For the "Recent Trades" component
+  recentTrades: TradeData[]; 
   kline?: KlineData;
-  latestTrade?: TradeData; // For 1s chart aggregation
+  latestTrade?: TradeData;
 }
 
 interface UseBinanceWebSocketReturn {
@@ -44,19 +43,16 @@ interface UseBinanceWebSocketReturn {
 
 export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn => {
   const [data, setData] = useState<BinanceWebSocketData | null>(null);
-  // ... (isLoading, error, isConnected, wsRef as before)
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
-
   useEffect(() => {
     let isMounted = true;
-
     const connect = async () => {
       setIsLoading(true);
-      setData(null); // Reset data on new connection/symbol
+      setData(null);
       setError(null);
 
       try {
@@ -74,8 +70,7 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
             lowPrice: tickerData.lowPrice,
             bids: [],
             asks: [],
-            recentTrades: [], // Initialize recentTrades
-            // kline and latestTrade undefined initially
+            recentTrades: [],
           });
         }
       } catch (e) {
@@ -90,16 +85,16 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
 
       const lowerSymbol = symbol.toLowerCase();
       const streams = [
-        `${lowerSymbol}@ticker`,        // For price, priceChangePercent, 24h H/L/Vol
-        `${lowerSymbol}@depth20@100ms`, // For order book
-        `${lowerSymbol}@trade`,         // For recent trades component AND for 1s kline aggregation
-        `${lowerSymbol}@kline_1m`       // For 1m kline updates (can be used for other timeframes too)
+        `${lowerSymbol}@ticker`,
+        `${lowerSymbol}@depth20@100ms`,
+        `${lowerSymbol}@trade`,
+        `${lowerSymbol}@kline_1m`
       ].join('/');
 
       const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
       wsRef.current = ws;
 
-      ws.onopen = () => { /* ... as before ... */
+      ws.onopen = () => {
         if (isMounted) {
           console.log(`[WS:${symbol}] WebSocket connected.`);
           setIsConnected(true);
@@ -127,18 +122,20 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
           } else if (stream.endsWith('@depth20@100ms')) {
             setData(prev => prev ? { ...prev, bids: streamData.bids, asks: streamData.asks } : null);
           } else if (stream.endsWith('@trade')) {
-            // For RecentTrades component and also for 1s chart aggregation
+            // --- START: แก้ไขส่วนนี้ให้ถูกต้อง ---
             setData(prev => {
               if (!prev) return null;
+              // อัปเดตรายการซื้อขายล่าสุด (Recent Trades)
               const newRecentTrades = [streamData, ...(prev.recentTrades || [])].slice(0, 50);
               return { ...prev, recentTrades: newRecentTrades, latestTrade: streamData as TradeData };
             });
+            // --- END: แก้ไขส่วนนี้ ---
           } else if (stream.endsWith('@kline_1m')) {
             if (streamData && streamData.k) {
               setData(prev => prev ? {
                 ...prev,
                 kline: {
-                  t: streamData.k.t / 1000,
+                  t: streamData.k.t, // <-- แก้ไข: ไม่ต้องหาร 1000
                   o: streamData.k.o,
                   h: streamData.k.h,
                   l: streamData.k.l,
@@ -150,7 +147,7 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
           }
         }
       };
-      // ... onerror, onclose as before ...
+      
       ws.onerror = (event) => {
         if (isMounted) {
           console.error('[WS] WebSocket error:', event);
@@ -169,7 +166,7 @@ export const useBinanceWebSocket = (symbol: string): UseBinanceWebSocketReturn =
 
     connect();
 
-    return () => { /* ... cleanup as before ... */
+    return () => {
       isMounted = false;
       if (wsRef.current) {
         wsRef.current.onopen = null;

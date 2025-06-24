@@ -7,7 +7,7 @@
 
 ProTrade คือแอปพลิเคชันเว็บเทรดคริปโตแบบเรียลไทม์ที่จำลอง UI และฟังก์ชันการทำงานหลักมาจาก Binance Spot Trading พัฒนาด้วย Next.js และเชื่อมต่อกับข้อมูลจริงจาก Binance ผ่าน WebSocket และ REST API
 
-![ProTrade Screenshot]<img width="1680" alt="Screenshot 2025-06-11 at 3 10 38" src="https://github.com/user-attachments/assets/1ed5522d-3248-4fca-aae1-1d42635dfe35" />
+![ProTrade Screenshot]<img width="1680" alt="Screenshot 2025-06-25 at 0 43 57" src="https://github.com/user-attachments/assets/5c782fdc-b502-4d62-b829-42847aa27642" />
 
 
 **Live Demo:** (https://pro-trade-a8v1wknwb-chumangkorns-projects.vercel.app/) ## ✨ คุณสมบัติหลัก (Key Features)
